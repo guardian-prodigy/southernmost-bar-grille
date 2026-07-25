@@ -24,7 +24,6 @@ jobs:
           test -s manifest.webmanifest
           ! grep -Eqi '>[^<]*(demo|demonstration)[^<]*<' index.html
   deploy:
-    if: github.event_name != 'pull_request'
     needs: validate
     environment:
       name: github-pages
