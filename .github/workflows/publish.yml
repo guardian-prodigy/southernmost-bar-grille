@@ -7,6 +7,11 @@ on:
       - ".github/workflows/publish.yml"
       - "README.md"
       - "site/**"
+  pull_request:
+    branches: [main]
+    paths:
+      - "README.md"
+      - "site/**"
   workflow_dispatch:
 
 permissions:
@@ -27,6 +32,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Build standalone site
         shell: bash
@@ -58,6 +65,7 @@ jobs:
           touch site/.nojekyll
 
       - name: Commit materialized site source
+        if: github.event_name != 'pull_request'
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
