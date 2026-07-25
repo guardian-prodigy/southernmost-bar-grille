@@ -5,13 +5,17 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/import-final-refinement.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/FINAL_REFINEMENT"
   workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: southernmost-final-refinement
+  group: southernmost-final-refinement-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -22,6 +26,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.head_ref || github.ref_name }}
 
       - name: Download and verify final package
         shell: bash
@@ -50,10 +55,11 @@ jobs:
 
       - name: Materialize and validate source branch
         shell: bash
+        env:
+          TARGET_BRANCH: ${{ github.head_ref || 'deploy/final-refinement-20260725f' }}
         run: |
           set -euo pipefail
-          branch="deploy/final-refinement-20260725f"
-          git switch -C "$branch" origin/main
+          git switch -C "$TARGET_BRANCH"
 
           rm -rf /tmp/southernmost-final
           mkdir -p /tmp/southernmost-final
@@ -62,11 +68,13 @@ jobs:
           find . -mindepth 1 -maxdepth 1 ! -name .git ! -name .github -exec rm -rf {} +
           cp -a /tmp/southernmost-final/. .
           touch .nojekyll
+          rm -f .github/FINAL_REFINEMENT
 
           npm run check
           test -s assets/og-southernmost.jpg
           test -s assets/southernmost-wordmark.webp
           test -s three-scenes-v2.js
+          test ! -e three-scenes.js
           grep -q "20260725f" index.html
           grep -q "southernmost-v14-20260725f" sw.js
           grep -q "southernmost-bar-grille" robots.txt
@@ -77,5 +85,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
+          if git diff --cached --quiet; then
+            echo "Final refinement is already materialized."
+            exit 0
+          fi
           git commit -m "Deploy final Southernmost refinement"
-          git push --force origin "HEAD:$branch"
+          git push --force origin "HEAD:$TARGET_BRANCH"
