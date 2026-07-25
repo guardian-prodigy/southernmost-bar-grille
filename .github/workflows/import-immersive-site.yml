@@ -5,13 +5,18 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/import-immersive-site.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/import-immersive-site.yml"
+      - ".github/IMPORT_VERIFY"
   workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: southernmost-source-import
+  group: southernmost-source-import-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -74,6 +79,7 @@ jobs:
           npm run check
 
       - name: Commit production source
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         shell: bash
         run: |
           set -euo pipefail
