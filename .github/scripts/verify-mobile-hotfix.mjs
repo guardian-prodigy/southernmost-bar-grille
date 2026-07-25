@@ -1,12 +1,12 @@
 import { chromium, devices } from "playwright";
 
-const browser = await chromium.launch({ headless: true });
+const browser = await chromium.launch({ headless: true, channel: "chrome" });
 const context = await browser.newContext({ ...devices["Pixel 7"], colorScheme: "dark" });
 const page = await context.newPage();
 const browserErrors = [];
 page.on("pageerror", (error) => browserErrors.push(`pageerror:${error.message}`));
 
-const url = "https://guardian-prodigy.github.io/southernmost-bar-grille/?v=20260725h&fresh=1&verify=5";
+const url = "https://guardian-prodigy.github.io/southernmost-bar-grille/?v=20260725h&fresh=1&verify=6";
 await page.goto(url, { waitUntil: "domcontentloaded", timeout: 120000 });
 await page.waitForTimeout(3500);
 
