@@ -54,15 +54,13 @@
   const toastRegion = $("#toast-region");
 
   function saveSession() {
-    try {
-      if (session && tableMode) localStorage.setItem(sessionStorageKey, JSON.stringify(session));
-      else localStorage.removeItem(sessionStorageKey);
-    } catch {}
+    if (session && tableMode) localStorage.setItem(sessionStorageKey, JSON.stringify(session));
+    else localStorage.removeItem(sessionStorageKey);
     renderSessionState();
     renderCart();
   }
   function saveCart() {
-    try { if (tableMode) localStorage.setItem(cartStorageKey, JSON.stringify(cart)); } catch {}
+    if (tableMode) localStorage.setItem(cartStorageKey, JSON.stringify(cart));
     renderCart();
   }
   function orderSubtotal(order) { return Number(order.subtotal || order.items?.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0) || 0); }
@@ -101,24 +99,6 @@
   updateScrollUI();
   addEventListener("scroll", updateScrollUI, { passive: true });
   addEventListener("resize", updateScrollUI, { passive: true });
-
-  const parallaxElements = $$('[data-parallax]');
-  let parallaxFrame = 0;
-  function updateParallax() {
-    parallaxFrame = 0;
-    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    parallaxElements.forEach((element) => {
-      const speed = Number(element.dataset.parallax || 0);
-      const rect = element.getBoundingClientRect();
-      const center = rect.top + rect.height / 2 - innerHeight / 2;
-      element.style.setProperty("--parallax-shift", `${clamp(-center * speed, -90, 90)}px`);
-    });
-  }
-  function requestParallax() { if (!parallaxFrame) parallaxFrame = requestAnimationFrame(updateParallax); }
-  updateParallax();
-  addEventListener("scroll", requestParallax, { passive: true });
-  addEventListener("resize", requestParallax, { passive: true });
-
   mobileToggle?.addEventListener("click", () => {
     const opening = mobileToggle.getAttribute("aria-expanded") !== "true";
     mobileToggle.setAttribute("aria-expanded", String(opening));
@@ -190,7 +170,6 @@
     if (event.key !== "Escape") return;
     if (!modal.hidden) closeModal();
     if (cartDrawer.classList.contains("is-open")) closeCart();
-    if (guidePanel?.classList.contains("is-open")) closeGuide();
   });
   document.addEventListener("click", (event) => {
     if (event.target.closest("[data-close-modal]")) closeModal();
@@ -365,7 +344,19 @@
   function renderOrderGrid() {
     const filtered = filteredMenuItems();
     const visible = filtered.slice(0, visibleMenuCount);
-    orderGrid.innerHTML = visible.length ? visible.map((item) => `<article class="order-card" style="--card-accent:${item.accent}"><div class="order-card__status"><span>${safe(item.category)}</span><i class="${item.available ? "is-available" : ""}">${item.available ? "Available" : "Sold out"}</i></div><h3>${safe(item.name)}</h3><p>${safe(item.description)}</p>${item.badge ? `<small class="order-card__badge">${safe(item.badge)}</small>` : ""}<div class="order-card__bottom"><span class="order-card__price">${money(item.price)}</span><button class="order-card__add" type="button" data-item-action="${safe(item.id)}" ${item.available ? "" : "disabled"}>${tableMode ? "Customize +" : "View item →"}</button></div></article>`).join("") : `<div class="no-results"><h3>No island favorites found.</h3><p>Try another search or menu chapter.</p></div>`;
+    orderGrid.innerHTML = visible.length ? visible.map((item) => `<article class="order-card order-card--photo" style="--card-accent:${item.accent}">
+      <div class="order-card__media">
+        <img src="${safe(item.categoryImage)}" alt="${safe(item.name)} from the Southernmost menu" loading="lazy" decoding="async" />
+        <span class="order-card__media-badge">${safe(item.category)}</span>
+      </div>
+      <div class="order-card__body">
+        <div class="order-card__status"><span>${safe(item.category)}</span><i class="${item.available ? "is-available" : ""}">${item.available ? "Available" : "Sold out"}</i></div>
+        <h3>${safe(item.name)}</h3>
+        <p>${safe(item.description)}</p>
+        ${item.badge ? `<small class="order-card__badge">${safe(item.badge)}</small>` : ""}
+        <div class="order-card__bottom"><span class="order-card__price">${money(item.price)}</span><button class="order-card__add" type="button" data-item-action="${safe(item.id)}" ${item.available ? "" : "disabled"}>${tableMode ? "Customize +" : "View item →"}</button></div>
+      </div>
+    </article>`).join("") : `<div class="no-results"><h3>No island favorites found.</h3><p>Try another search or menu chapter.</p></div>`;
     loadMore.hidden = visible.length >= filtered.length;
   }
   menuSearch.addEventListener("input", () => { visibleMenuCount = 12; renderOrderGrid(); });
@@ -399,7 +390,7 @@
           render();
         });
       } else if (tabStep === 2) {
-        modalContent.innerHTML = `<div class="modal__hero"><p class="eyebrow">Mobile verification</p><h2 id="modal-title">Enter the four-digit code.</h2><p>Sent to ${safe(maskedPhone(draft.phone))}. This protects the open tab and lets the guest return from the same phone.</p></div><form class="modal__body" id="tab-step-two">${bars}<div class="otp-grid" aria-label="Four digit verification code"><input inputmode="numeric" maxlength="1" aria-label="Digit 1" autofocus /><input inputmode="numeric" maxlength="1" aria-label="Digit 2" /><input inputmode="numeric" maxlength="1" aria-label="Digit 3" /><input inputmode="numeric" maxlength="1" aria-label="Digit 4" /></div><p class="form-note">SMS verification is not connected yet. Enter any four digits to continue.</p><div class="form-actions"><button class="button button--ink" type="button" id="tab-code-back">Back</button><button class="button button--coral" type="submit">Verify phone</button></div></form>`;
+        modalContent.innerHTML = `<div class="modal__hero"><p class="eyebrow">Mobile verification</p><h2 id="modal-title">Enter the four-digit code.</h2><p>Sent to ${safe(maskedPhone(draft.phone))}. This protects the open tab and lets the guest return from the same phone.</p></div><form class="modal__body" id="tab-step-two">${bars}<div class="otp-grid" aria-label="Four digit verification code"><input inputmode="numeric" maxlength="1" aria-label="Digit 1" autofocus /><input inputmode="numeric" maxlength="1" aria-label="Digit 2" /><input inputmode="numeric" maxlength="1" aria-label="Digit 3" /><input inputmode="numeric" maxlength="1" aria-label="Digit 4" /></div><p class="form-note">SMS delivery is not connected in this temporary client environment. Enter any four digits to continue.</p><div class="form-actions"><button class="button button--ink" type="button" id="tab-code-back">Back</button><button class="button button--coral" type="submit">Verify phone</button></div></form>`;
         const inputs = $$(".otp-grid input", modalContent);
         inputs.forEach((input, index) => {
           input.addEventListener("input", () => { input.value = input.value.replace(/\D/g, "").slice(0, 1); if (input.value && inputs[index + 1]) inputs[index + 1].focus(); });
@@ -637,7 +628,7 @@
   }
 
   function paymentScreen(amounts) {
-    modalContent.innerHTML = `<div class="modal__hero"><p class="eyebrow">Secure digital closeout</p><h2 id="modal-title">Choose a fast way to pay.</h2><p>Wallet and card controls are presented exactly where the production payment provider will connect.</p></div><form class="modal__body" id="payment-form"><div class="wallet-grid"><button type="button" data-wallet="apple"><span></span> Pay</button><button type="button" data-wallet="google"><span>G</span> Pay</button></div><div class="payment-divider"><span>or pay by card</span></div><div class="form-grid"><div class="field field--full"><label for="card-number">Card number</label><input id="card-number" inputmode="numeric" autocomplete="cc-number" placeholder="1234 1234 1234 1234" /></div><div class="field"><label for="card-expiry">Expiration</label><input id="card-expiry" autocomplete="cc-exp" placeholder="MM / YY" /></div><div class="field"><label for="card-cvc">Security code</label><input id="card-cvc" inputmode="numeric" autocomplete="cc-csc" placeholder="CVC" /></div></div><div class="payment-total-bar"><span>Amount to authorize</span><strong>${money(amounts.total)}</strong></div><p class="form-note">Online payments are not connected yet. No card or wallet data is stored or transmitted.</p><div class="form-actions"><button class="button button--ink" type="button" data-close-modal>Cancel</button><button class="button button--coral" type="submit">Complete closeout</button></div></form>`;
+    modalContent.innerHTML = `<div class="modal__hero"><p class="eyebrow">Secure digital closeout</p><h2 id="modal-title">Choose a fast way to pay.</h2><p>Wallet and card controls are presented exactly where the production payment provider will connect.</p></div><form class="modal__body" id="payment-form"><div class="wallet-grid"><button type="button" data-wallet="apple"><span></span> Pay</button><button type="button" data-wallet="google"><span>G</span> Pay</button></div><div class="payment-divider"><span>or pay by card</span></div><div class="form-grid"><div class="field field--full"><label for="card-number">Card number</label><input id="card-number" inputmode="numeric" autocomplete="cc-number" placeholder="1234 1234 1234 1234" /></div><div class="field"><label for="card-expiry">Expiration</label><input id="card-expiry" autocomplete="cc-exp" placeholder="MM / YY" /></div><div class="field"><label for="card-cvc">Security code</label><input id="card-cvc" inputmode="numeric" autocomplete="cc-csc" placeholder="CVC" /></div></div><div class="payment-total-bar"><span>Amount to authorize</span><strong>${money(amounts.total)}</strong></div><p class="form-note">Payments are not enabled in this temporary client environment. No card or wallet data is stored or transmitted.</p><div class="form-actions"><button class="button button--ink" type="button" data-close-modal>Cancel</button><button class="button button--coral" type="submit">Complete closeout</button></div></form>`;
     $$('[data-wallet]', modalContent).forEach((button) => button.addEventListener("click", () => paymentUnavailable(button.dataset.wallet)));
     $("#payment-form").addEventListener("submit", (event) => { event.preventDefault(); paymentUnavailable("card"); });
   }
@@ -645,7 +636,8 @@
     openModal(`<div class="success-state payment-pending"><div class="success-state__icon">⌁</div><p class="eyebrow">Payment connection pending</p><h2 id="modal-title">The closeout experience is ready.</h2><p>${method === "card" ? "Card" : method === "apple" ? "Apple Pay" : "Google Pay"} will authorize the final total after the restaurant connects its payment provider. No charge was processed here.</p><p><strong>Estimated balance ${money(openSubtotal() + openTax())}</strong></p><div class="form-actions form-actions--center"><button class="button button--ink" type="button" data-open-service>Call ${safe(session.server)}</button><button class="button button--coral" type="button" data-close-modal>Return to tab</button></div></div>`);
   }
   function finalizeClose() {
-    try { localStorage.removeItem(sessionStorageKey); localStorage.removeItem(cartStorageKey); } catch {}
+    localStorage.removeItem(sessionStorageKey);
+    localStorage.removeItem(cartStorageKey);
     session = null;
     cart = [];
     closeModal();
@@ -711,10 +703,10 @@
     openModal(`<div class="modal__hero"><p class="eyebrow">Entertainment calendar</p><h2 id="modal-title">What’s happening at the end of the road.</h2><p>Live music, billiards, watch parties and special programming in one updateable calendar.</p></div><div class="modal__body"><div class="modal-event-list">${DATA.events.map((item) => `<article><span>${safe(item.day)}</span><div><h3>${safe(item.title)}</h3><p>${safe(item.description)}</p></div><strong>${safe(item.time)}</strong></article>`).join("")}</div><div class="form-actions"><button class="button button--ink" type="button" data-close-modal>Close calendar</button><button class="button button--coral" type="button" data-open-party>Host an event</button></div></div>`);
   }
   function menuBoardFlow() {
-    openModal(`<div class="modal__hero"><p class="eyebrow">Original illustrated menu</p><h2 id="modal-title">See the full menu artwork.</h2><p>Switch between the supplied menu boards or return to the searchable page-turning version.</p></div><div class="modal__body menu-board-viewer"><div class="menu-board-tabs"><button class="is-active" type="button" data-board="complete">Complete menu</button><button type="button" data-board="signature">Signature layout</button></div><div class="menu-board-frame"><img id="menu-board-image" src="assets/menu-board-complete.webp" alt="Southernmost illustrated complete menu" /></div><div class="form-actions"><button class="button button--ink" type="button" data-close-modal>Close</button></div></div>`, () => {
+    openModal(`<div class="modal__hero"><p class="eyebrow">Original illustrated menu</p><h2 id="modal-title">See the full menu artwork.</h2><p>Switch between the supplied menu boards or return to the searchable page-turning version.</p></div><div class="modal__body menu-board-viewer"><div class="menu-board-tabs"><button class="is-active" type="button" data-board="complete">Complete menu</button><button type="button" data-board="signature">Signature layout</button></div><div class="menu-board-frame"><img id="menu-board-image" src="assets/menu-board-complete.jpg" alt="Southernmost illustrated complete menu" /></div><div class="form-actions"><button class="button button--ink" type="button" data-close-modal>Close</button></div></div>`, () => {
       $$('[data-board]', modalContent).forEach((button) => button.addEventListener("click", () => {
         $$('[data-board]', modalContent).forEach((candidate) => candidate.classList.toggle("is-active", candidate === button));
-        $("#menu-board-image").src = button.dataset.board === "complete" ? "assets/menu-board-complete.webp" : "assets/menu-board-signature.webp";
+        $("#menu-board-image").src = button.dataset.board === "complete" ? "assets/menu-board-complete.jpg" : "assets/menu-board-signature.jpg";
         $("#menu-board-image").alt = button.dataset.board === "complete" ? "Southernmost illustrated complete menu" : "Southernmost illustrated signature menu";
       }));
     });
@@ -725,127 +717,17 @@
   $$('[data-open-event]').forEach((button) => button.addEventListener("click", eventFlow));
   $$('[data-open-menu-board]').forEach((button) => button.addEventListener("click", menuBoardFlow));
 
-  /* Southernmost Island Guide — deterministic, on-device and API-free */
-  const guidePanel = $("#guide-panel");
-  const guideBackdrop = $("#guide-backdrop");
-  const guideMessages = $("#guide-messages");
-  const guideForm = $("#guide-form");
-  const guideInput = $("#guide-input");
-  const GUIDE_HISTORY_KEY = "southernmost.island-guide.v1";
-  let guideHistory = [];
-  try { guideHistory = JSON.parse(localStorage.getItem(GUIDE_HISTORY_KEY) || "[]").slice(-12); } catch { guideHistory = []; }
-
-  function openGuide() {
-    guideBackdrop.hidden = false;
-    guidePanel.setAttribute("aria-hidden", "false");
-    document.body.classList.add("no-scroll");
-    requestAnimationFrame(() => { guideBackdrop.classList.add("is-open"); guidePanel.classList.add("is-open"); });
-    if (!guideHistory.length) {
-      guideHistory.push({ role: "guide", text: tableMode
-        ? `Welcome to ${tableLabel}. I can recommend food and drinks, explain your tab, or help you find something fast. ${session ? `${session.server} is assigned to you.` : "Open the tab whenever you're ready."}`
-        : "Welcome to Southernmost. I know the full menu, hours, happy hour, events, billiards and how table QR ordering works. What kind of night are you planning?" });
-    }
-    renderGuide();
-    setTimeout(() => guideInput?.focus(), 280);
-  }
-  function closeGuide() {
-    guideBackdrop.classList.remove("is-open");
-    guidePanel.classList.remove("is-open");
-    guidePanel.setAttribute("aria-hidden", "true");
-    setTimeout(() => { guideBackdrop.hidden = true; document.body.classList.remove("no-scroll"); }, 240);
-  }
-  function persistGuide() {
-    try { localStorage.setItem(GUIDE_HISTORY_KEY, JSON.stringify(guideHistory.slice(-12))); } catch {}
-  }
-  function guideCard(item) {
-    return `<button class="guide-result" type="button" data-guide-item="${safe(item.id)}"><span>${safe(item.category)}</span><strong>${safe(item.name)}</strong><small>${safe(item.description)}</small><b>${money(item.price)} <i>View ↗</i></b></button>`;
-  }
-  function renderGuide() {
-    guideMessages.innerHTML = guideHistory.map((message) => `<article class="guide-message guide-message--${message.role}"><span>${message.role === "guide" ? "✦" : "You"}</span><div><p>${safe(message.text)}</p>${message.items?.length ? `<div class="guide-results">${message.items.map((id) => itemMap.get(id)).filter(Boolean).map(guideCard).join("")}</div>` : ""}${message.action ? `<button class="guide-action" type="button" data-guide-action="${safe(message.action.type)}">${safe(message.action.label)}</button>` : ""}</div></article>`).join("");
-    guideMessages.scrollTop = guideMessages.scrollHeight;
-    persistGuide();
-  }
-  function itemMatches(item, words) {
-    const haystack = `${item.name} ${item.description} ${item.category} ${item.badge || ""}`.toLowerCase();
-    return words.some((word) => haystack.includes(word));
-  }
-  function rankedItems(words, options = {}) {
-    return menuItems
-      .filter((item) => item.available && (!options.max || item.price <= options.max) && (!options.category || item.categoryId === options.category))
-      .map((item) => ({ item, score: words.reduce((score, word) => score + (`${item.name} ${item.description} ${item.category} ${item.badge || ""}`.toLowerCase().includes(word) ? 3 : 0), 0) + (item.badge ? 1 : 0) }))
-      .filter((entry) => entry.score > 0)
-      .sort((a,b) => b.score - a.score || a.item.price - b.item.price)
-      .slice(0, 3)
-      .map((entry) => entry.item);
-  }
-  function guideResponse(question) {
-    const q = question.toLowerCase().replace(/[^a-z0-9$ ]+/g, " ");
-    const maxMatch = q.match(/(?:under|less than|below|max|budget)\s*\$?\s*(\d{1,3})/);
-    const max = maxMatch ? Number(maxMatch[1]) : null;
-    if (/hour|open|close|closing|late/.test(q)) return { text: `Southernmost is open ${DATA.site.hours.map((item) => `${item.label} ${item.value}`).join(" and ")}. Weekend nights run late.` };
-    if (/address|where|location|direction|military|okeechobee/.test(q)) return { text: `${DATA.site.address}, ${DATA.site.city}, at ${DATA.site.intersection}.`, action: { type: "directions", label: "Open directions" } };
-    if (/happy|special|discount/.test(q)) return { text: `Happy hour is ${DATA.site.happyHour.label}, ${DATA.site.happyHour.time}: ${DATA.site.happyHour.specials.join(", ")}.`, action: { type: "happy", label: "View happy hour" } };
-    if (/deliver|delivery|uber|home/.test(q)) return { text: "The full menu is readable here. Home delivery continues through Uber Eats for address validation, availability and driver tracking.", action: { type: "delivery", label: "Continue to Uber Eats" } };
-    if (/billiard|pool table|rack|game/.test(q)) return { text: "Billiards is available nightly. Lounge QR codes can link food and drinks directly to the billiards station so the group keeps one running tab.", action: { type: "billiards", label: "See the billiards lounge" } };
-    if (/music|band|dj|event|weekend|watch party/.test(q)) return { text: "Southernmost centers the weekend around live music, late-night energy, watch parties and private events. Friday and Saturday are the main live-music nights.", action: { type: "events", label: "Open the event calendar" } };
-    if (/reserve|reservation|table for|party size/.test(q)) return { text: "You can organize the date, time, party size and seating preference in the reservation flow.", action: { type: "reservation", label: "Request a reservation" } };
-    if (/party|birthday|corporate|wedding|private event|takeover/.test(q)) return { text: "Southernmost can capture guest count, preferred date, event type, food, drinks and setup details in one structured inquiry.", action: { type: "party", label: "Plan an event" } };
-    if (/allerg|gluten|dairy|nut|shellfish|vegan|vegetarian/.test(q)) {
-      const vegetarian = rankedItems(["salad", "margherita", "fries", "onion rings", "plantains", "rice", "coleslaw", "pretzel"], { max }).slice(0,3);
-      return { text: "Menu descriptions are not a guarantee against cross-contact. Add an allergy note to the item and confirm it directly with the assigned server before ordering.", items: vegetarian.map((item) => item.id) };
-    }
-    if (/tab|qr|scan|server|waiter|pay|close out|closeout/.test(q)) return { text: tableMode
-      ? `${tableLabel} is already linked. ${session ? `${session.server} is assigned and your running balance remains available until closeout.` : "Verify a first name and mobile number to open the tab, receive a server assignment and order in rounds."}`
-      : "In the venue, each table, bar seat, patio area or billiards station has a QR code. It opens the full menu with the correct location attached, then verifies a first name and mobile number before a running tab is opened.", action: { type: tableMode ? "tab" : "qr", label: tableMode ? "Open tab center" : "See QR access" } };
-
-    let words=[];
-    if (/spicy|hot|heat|habanero|jerk/.test(q)) words.push("jerk","habanero","heatwave","spicy","nashville hot");
-    if (/seafood|fish|shrimp|mahi|coastal|catch/.test(q)) words.push("mahi","shrimp","seafood","fish","crab","conch");
-    if (/wing/.test(q)) words.push("wing","buffalo","habanero");
-    if (/burger|sandwich/.test(q)) words.push("burger","sandwich");
-    if (/cocktail|drink|rum|tequila|vodka|margarita|mojito/.test(q)) words.push("cocktail","rum","tequila","vodka","margarita","mojito","sunset");
-    if (/dessert|sweet|cake|pie/.test(q)) words.push("dessert","pie","cake","cheesecake");
-    if (/signature|best|recommend|favorite|popular|special/.test(q)) words.push("signature","favorite","jerk lamb","surf","sunset","wings");
-    if (/chicken/.test(q)) words.push("chicken","jerk");
-    if (!words.length) words = q.split(/\s+/).filter((word) => word.length > 3);
-    let picks = rankedItems(words, { max });
-    if (!picks.length && max) picks = menuItems.filter((item) => item.available && item.price <= max).sort((a,b) => a.price-b.price).slice(0,3);
-    if (!picks.length) picks = ["jerk-lamb-chops","southernmost-wings","southernmost-sunset"].map((id) => itemMap.get(id)).filter(Boolean);
-    return { text: max ? `These fit a budget of ${money(max)} or less and match what you described.` : "These are strong Southernmost matches for what you described.", items: picks.map((item) => item.id) };
-  }
-  function askGuide(question) {
-    const clean = String(question || "").trim();
-    if (!clean) return;
-    guideHistory.push({ role: "guest", text: clean });
-    renderGuide();
-    setTimeout(() => { guideHistory.push({ role: "guide", ...guideResponse(clean) }); renderGuide(); }, 180);
-  }
-  $$('[data-open-guide]').forEach((button) => button.addEventListener("click", openGuide));
-  $$('[data-close-guide]').forEach((button) => button.addEventListener("click", closeGuide));
-  guideBackdrop?.addEventListener("click", closeGuide);
-  guideForm?.addEventListener("submit", (event) => { event.preventDefault(); askGuide(guideInput.value); guideInput.value = ""; });
-  $$('[data-guide-prompt]').forEach((button) => button.addEventListener("click", () => askGuide(button.dataset.guidePrompt)));
-  guideMessages?.addEventListener("click", (event) => {
-    const itemButton = event.target.closest("[data-guide-item]");
-    if (itemButton) { closeGuide(); openCustomizer(itemButton.dataset.guideItem); return; }
-    const action = event.target.closest("[data-guide-action]")?.dataset.guideAction;
-    if (!action) return;
-    if (action === "directions") open(DATA.site.directionsUrl, "_blank", "noopener");
-    if (action === "delivery") open(DATA.site.deliveryUrl, "_blank", "noopener");
-    if (action === "happy") { closeGuide(); happyHourFlow(); }
-    if (action === "events") { closeGuide(); eventFlow(); }
-    if (action === "reservation") { closeGuide(); reservationFlow(); }
-    if (action === "party") { closeGuide(); partyFlow(); }
-    if (action === "billiards") { closeGuide(); $("#billiards")?.scrollIntoView({ behavior: "smooth" }); }
-    if (action === "qr") location.href = "admin/qr-kit.html";
-    if (action === "tab") { closeGuide(); tableMode ? openTabCenter() : location.href = "admin/qr-kit.html"; }
-  });
-
   /* Events and experience notes */
   $("#event-list").innerHTML = DATA.events.slice(0, 5).map((item, index) => `<article class="event-row"><span class="event-row__number">${String(index + 1).padStart(2, "0")}</span><div><small>${safe(item.day)}</small><h3>${safe(item.title)}</h3><p>${safe(item.description)}</p></div><time>${safe(item.time)}</time></article>`).join("");
   $("#experience-notes-track").innerHTML = DATA.experiencePillars.map((item) => `<article class="review-card experience-note-card"><div class="experience-note-card__icon">${safe(item.icon)}</div><h3>${safe(item.title)}</h3><p>${safe(item.copy)}</p><footer><span>Southernmost experience</span><span>Food · Play · Music</span></footer></article>`).join("");
 
   $("#break-rack")?.addEventListener("click", () => { dispatchEvent(new CustomEvent("southernmost:break-rack")); toast("Rack in motion"); });
+  $("#reset-rack")?.addEventListener("click", () => { dispatchEvent(new CustomEvent("southernmost:reset-rack")); toast("Fresh rack ready"); });
+  addEventListener("southernmost:pocketed", (event) => {
+    const count = Number(event.detail?.count || 0);
+    const node = $("#pocketed-count");
+    if (node) node.textContent = `${count} / 15`;
+  });
 
   /* Initial state */
   renderSessionState();
@@ -853,6 +735,11 @@
   setInterval(() => { if (session?.orders?.length) renderSessionState(); }, 7000);
 
   if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
-    addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+    addEventListener("load", async () => {
+      try {
+        const registration = await navigator.serviceWorker.register("sw.js?v=20260725f", { updateViaCache: "none" });
+        registration.update().catch(() => {});
+      } catch {}
+    });
   }
 })();

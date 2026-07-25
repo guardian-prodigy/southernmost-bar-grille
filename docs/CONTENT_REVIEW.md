@@ -31,10 +31,3 @@
 - Whether happy hour is daily 5–7 PM or Monday–Friday 3–6 PM
 
 The supplied menu artwork states Monday–Friday 3–6 PM. The existing website states daily 5–7 PM. This build follows the supplied menu artwork until the client resolves the discrepancy.
-
-
-## Public-site reference pass (July 25, 2026)
-
-The experience language now carries forward the current public site’s “welcome to the end of the road,” “through the mahogany doors,” “why we are called Southernmost,” and “we do the most for our guests” framing. The supplied illustrated menu remains the pricing and happy-hour source of truth for this build. The public site advertises a different happy-hour window, so the conflict remains flagged for client approval before production launch.
-
-The Island Guide is an on-device deterministic menu agent. It uses only `data.js`, browser state and rule-based ranking. It sends no prompts or customer data to OpenAI or any other model provider and requires no API key.

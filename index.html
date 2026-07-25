@@ -10,7 +10,6 @@
   <meta property="og:image" content="assets/og-southernmost.jpg" />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://guardian-prodigy.github.io/southernmost-bar-grille/" />
-  <meta name="twitter:card" content="summary_large_image" />
   <link rel="canonical" href="https://guardian-prodigy.github.io/southernmost-bar-grille/" />
   <title>Southernmost Bar & Grille | West Palm Beach</title>
   <link rel="manifest" href="manifest.webmanifest" />
@@ -18,7 +17,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600;1,700&family=Yellowtail&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=20260725f" />
+  <link rel="stylesheet" href="upgrade.css?v=20260725f" />
   <script type="application/ld+json">
   {
     "@context":"https://schema.org",
@@ -32,6 +32,16 @@
   </script>
 </head>
 <body>
+  <svg class="icon-sprite" aria-hidden="true" focusable="false">
+    <symbol id="icon-bag" viewBox="0 0 24 24"><path d="M5.5 8.5h13l1 12h-15l1-12Z"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/></symbol>
+    <symbol id="icon-chat" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 1-8 8 8.7 8.7 0 0 1-3.2-.6L4 20l1.6-4A8 8 0 1 1 20 11Z"/><path d="m16.2 5.8.45 1.15 1.15.45-1.15.45-.45 1.15-.45-1.15-1.15-.45 1.15-.45.45-1.15Z"/></symbol>
+    <symbol id="icon-book" viewBox="0 0 24 24"><path d="M3.5 5.5A3.5 3.5 0 0 1 7 4h5v16H7a3.5 3.5 0 0 0-3.5 1V5.5Z"/><path d="M20.5 5.5A3.5 3.5 0 0 0 17 4h-5v16h5a3.5 3.5 0 0 1 3.5 1V5.5Z"/></symbol>
+    <symbol id="icon-bell" viewBox="0 0 24 24"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 8h18c0-1-3-1-3-8Z"/><path d="M10 20h4"/></symbol>
+    <symbol id="icon-map" viewBox="0 0 24 24"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Z"/><path d="M9 3v15M15 6v15"/></symbol>
+    <symbol id="icon-arrow" viewBox="0 0 24 24"><path d="M5 12h14M14 7l5 5-5 5"/></symbol>
+    <symbol id="icon-spark" viewBox="0 0 24 24"><path d="m12 2 1.2 4.8L18 8l-4.8 1.2L12 14l-1.2-4.8L6 8l4.8-1.2L12 2Z"/><path d="m19 14 .7 2.3L22 17l-2.3.7L19 20l-.7-2.3L16 17l2.3-.7L19 14Z"/></symbol>
+    <symbol id="icon-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+  </svg>
   <a class="skip-link" href="#main">Skip to content</a>
   <div class="site-progress" aria-hidden="true"><span></span></div>
 
@@ -45,15 +55,12 @@
 
   <header class="site-header" id="top">
     <div class="shell header__inner">
-      <a class="brand" href="#top" aria-label="Southernmost Bar and Grille home">
-        <span class="brand__mark" aria-hidden="true">
-          <svg viewBox="0 0 80 80" role="img"><path d="M13 52c10-6 18-8 28-3 8 4 16 4 26-3"/><path d="M40 48c0-17-7-25-17-32 13 1 19 8 21 18 2-12 10-18 23-19-10 8-17 17-19 33"/><circle cx="43" cy="21" r="6"/></svg>
-        </span>
-        <span class="brand__copy"><strong>Southernmost</strong><small>BAR &amp; GRILLE</small></span>
+      <a class="brand brand--official" href="#top" aria-label="Southernmost Bar and Grille home">
+        <img class="brand__official-logo" src="assets/southernmost-wordmark.webp" alt="Southernmost Bar and Grille" />
       </a>
 
       <nav class="desktop-nav" aria-label="Primary navigation">
-        <a href="#story">Our story</a>
+        <a href="#experience">Experience</a>
         <a href="#menu-book">Menu book</a>
         <a href="#table-ordering">Table ordering</a>
         <a href="#cocktails">Cocktails</a>
@@ -63,14 +70,14 @@
 
       <div class="header__actions">
         <button class="icon-button cart-trigger" type="button" data-open-cart aria-label="Open current order">
-          <span aria-hidden="true">🛍</span><b data-cart-count>0</b>
+          <svg class="ui-icon" aria-hidden="true"><use href="#icon-bag"></use></svg><b data-cart-count>0</b>
         </button>
         <a class="button button--coral header-order" href="#menu-book">View menu</a>
         <button class="menu-toggle" type="button" aria-label="Open mobile menu" aria-expanded="false"><span></span><span></span></button>
       </div>
     </div>
     <div class="mobile-nav" hidden>
-      <a href="#story">Our story</a>
+      <a href="#experience">Experience</a>
       <a href="#menu-book">Interactive menu</a>
       <a href="#table-ordering">Table ordering</a>
       <a href="#cocktails">Cocktails</a>
@@ -82,7 +89,7 @@
 
   <main id="main">
     <section class="hero" aria-labelledby="hero-title">
-      <div class="hero__photo" data-parallax="-0.08" aria-hidden="true"></div>
+      <div class="hero__photo" aria-hidden="true"></div>
       <div class="hero__veil" aria-hidden="true"></div>
       <canvas id="hero-canvas" class="hero__canvas" aria-hidden="true"></canvas>
       <div class="hero__grain" aria-hidden="true"></div>
@@ -103,40 +110,11 @@
         </div>
 
         <div class="hero__portal" data-reveal data-delay="160">
-          <div class="portal-card">
-            <p class="portal-card__eyebrow" id="hero-mode-kicker">Tonight’s escape</p>
-            <p class="portal-card__title" id="hero-mode-title">Sunset. Sound. Southernmost.</p>
-            <div class="portal-card__meta" id="hero-mode-meta"><span>Kitchen open</span><span>•</span><span>Late weekend hours</span></div>
+          <div class="hero-sign-card">
+            <img src="assets/southernmost-logo-plate.webp" alt="" aria-hidden="true" />
+            <div><span id="hero-mode-kicker">Tonight’s escape</span><strong id="hero-mode-title">Sunset. Sound. Southernmost.</strong><small id="hero-mode-meta">Kitchen open · late weekend hours</small></div>
           </div>
           <div class="scroll-cue"><span>Scroll to arrive</span><i></i></div>
-        </div>
-      </div>
-    </section>
-
-    <div class="marquee" aria-hidden="true">
-      <div class="marquee__track">
-        <span>COASTAL KITCHEN</span><i>✦</i><span>WORLD-FAMOUS WINGS</span><i>✦</i><span>BILLIARDS NIGHTLY</span><i>✦</i><span>LIVE MUSIC</span><i>✦</i><span>TROPICAL COCKTAILS</span><i>✦</i><span>PALM BEACH ISLAND TIME</span><i>✦</i>
-        <span>COASTAL KITCHEN</span><i>✦</i><span>WORLD-FAMOUS WINGS</span><i>✦</i><span>BILLIARDS NIGHTLY</span><i>✦</i><span>LIVE MUSIC</span><i>✦</i><span>TROPICAL COCKTAILS</span><i>✦</i><span>PALM BEACH ISLAND TIME</span><i>✦</i>
-      </div>
-    </div>
-
-    <section class="section origin-story" id="story" aria-labelledby="story-title">
-      <div class="shell origin-story__grid">
-        <div class="origin-story__visual" data-reveal>
-          <div class="origin-story__photo" data-parallax="0.06"><img src="assets/interior.webp" alt="Warm Southernmost tropical bar interior" /></div>
-          <div class="origin-story__seal" aria-hidden="true"><span>90</span><small>MILES TO<br />SOUTHERNMOST<br />POINT</small></div>
-          <div class="origin-story__caption"><small>Through the mahogany doors</small><strong>Lantern glow. Island ease.</strong></div>
-        </div>
-        <div class="origin-story__copy" data-reveal data-delay="100">
-          <p class="eyebrow">Why we're called Southernmost</p>
-          <h2 id="story-title">We do the most<br /><em>for our guests.</em></h2>
-          <p class="origin-story__lede">A taste of the Florida Keys in the Palm Beach neighborhood—a stage for local bands, a gathering place for the community, and a slow-down spot for anyone who needs to feel a thousand miles away.</p>
-          <div class="origin-story__facts">
-            <article><span>01</span><div><strong>Coastal cuisine</strong><small>Dock-inspired seafood, island signatures and bar favorites.</small></div></article>
-            <article><span>02</span><div><strong>Billiards lounge</strong><small>Tournament-grade tables with food and drinks tied to one tab.</small></div></article>
-            <article><span>03</span><div><strong>Live under the lights</strong><small>Weekend music, watch parties and local entertainment.</small></div></article>
-          </div>
-          <div class="origin-story__actions"><a class="button button--ink" href="#experience">Explore the venue</a><button class="button button--soft" type="button" data-open-guide>Ask the Island Guide</button></div>
         </div>
       </div>
     </section>
@@ -211,6 +189,21 @@
           <p class="drag-hint" id="drag-hint"><span aria-hidden="true">↤</span> Drag the page corner <span aria-hidden="true">↦</span></p>
         </div>
 
+        <div class="mobile-book-reader" id="mobile-book-reader" data-reveal aria-label="Swipeable Southernmost menu book">
+          <div class="mobile-book-reader__topline"><span id="mobile-book-label">Cover</span><div class="mobile-book-progress"><i id="mobile-book-progress"></i></div></div>
+          <div class="mobile-book-shell" id="mobile-book-shell">
+            <div class="mobile-book-underlay" id="mobile-book-underlay" aria-hidden="true"></div>
+            <div class="mobile-book-page" id="mobile-book-page" tabindex="0" role="group" aria-live="polite"></div>
+            <div class="mobile-book-corner" aria-hidden="true"></div>
+          </div>
+          <p class="mobile-book-hint"><span>Drag from the page edge</span><small>or swipe left and right</small></p>
+          <div class="mobile-book-controls">
+            <button class="circle-button" type="button" id="mobile-book-prev" aria-label="Previous menu page">←</button>
+            <div class="mobile-book-chapters" id="mobile-book-chapters" aria-label="Menu chapters"></div>
+            <button class="circle-button" type="button" id="mobile-book-next" aria-label="Next menu page">→</button>
+          </div>
+        </div>
+
         <div class="book-controls" data-reveal>
           <button class="circle-button" type="button" id="book-prev" aria-label="Previous menu page">←</button>
           <div class="chapter-nav" id="chapter-nav" aria-label="Menu chapters"></div>
@@ -246,6 +239,13 @@
           <div><p class="eyebrow" id="order-kicker">Full menu</p><h2 id="order-title">Build the next round.</h2></div>
           <p id="order-intro">Browse every menu item and modifier. Ordering controls unlock when this page is opened from a Southernmost table QR.</p>
         </div>
+        <div class="menu-visual-showcase" data-reveal>
+          <article class="menu-visual-card menu-visual-card--lamb"><img src="assets/lamb.webp" alt="Jerk lamb chops with island sides" loading="lazy"><div><small>Chef’s signature</small><strong>Jerk Lamb Chops</strong><span>$34</span></div></article>
+          <article class="menu-visual-card menu-visual-card--wings"><img src="assets/wings.webp" alt="Southernmost wings" loading="lazy"><div><small>World-famous wings</small><strong>Choose your flavor</strong><span>From $15</span></div></article>
+          <article class="menu-visual-card menu-visual-card--mahi"><img src="assets/mahi.webp" alt="Blackened mahi plate" loading="lazy"><div><small>Fresh catch</small><strong>Blackened Mahi</strong><span>$24</span></div></article>
+          <button class="menu-art-card" type="button" data-open-menu-board><img src="assets/menu-board-complete.jpg" alt="Illustrated Southernmost menu board" loading="lazy"><span><small>Supplied menu artwork</small><strong>Open the full board</strong><svg class="ui-icon"><use href="#icon-arrow"></use></svg></span></button>
+        </div>
+
         <div class="order-tools" data-reveal>
           <label class="menu-search"><span aria-hidden="true">⌕</span><input id="menu-search" type="search" placeholder="Search the menu" autocomplete="off" /></label>
           <div class="order-mode-indicator" id="order-mode-indicator"><i></i><span>Read-only menu</span></div>
@@ -259,9 +259,9 @@
     <section class="section cocktail-lab" id="cocktails" aria-labelledby="cocktail-title">
       <div class="shell cocktail-grid">
         <div class="cocktail-copy" data-reveal>
-          <p class="eyebrow eyebrow--gold">Interactive cocktail laboratory</p>
+          <p class="eyebrow eyebrow--gold">Signature cocktail studio</p>
           <h2 id="cocktail-title">Choose the color of your sunset.</h2>
-          <p>Move across the glass, switch between signature pours and send a drink directly to your table tab when table ordering is active.</p>
+          <p>Choose a signature pour, rotate the glass to inspect the garnish, and add the drink directly to your table tab when table ordering is active.</p>
           <div class="cocktail-selector" id="cocktail-selector"></div>
           <div class="cocktail-detail">
             <small id="cocktail-kicker">Rum · pineapple · orange · grenadine</small>
@@ -272,7 +272,7 @@
         </div>
         <div class="cocktail-visual" data-reveal data-delay="100">
           <canvas id="cocktail-canvas" aria-hidden="true"></canvas>
-          <div class="cocktail-orbit"><span>Drag to rotate</span><span>Liquid shader</span><span>Island pours</span></div>
+          <div class="cocktail-orbit"><span>Drag the glass</span><span>Choose a pour</span><span>Add to your tab</span></div>
           <div class="cocktail-fallback" aria-hidden="true"><i></i><b>Southernmost</b><span>Signature pours</span></div>
         </div>
       </div>
@@ -289,7 +289,10 @@
           <div class="billiards__stats"><span><strong>Nightly</strong>Billiards access</span><span><strong>QR linked</strong>Station ordering</span><span><strong>One tab</strong>Food + drinks</span></div>
           <div class="hero__actions"><button class="button button--coral" type="button" id="break-rack">Break the rack</button><a class="button button--glass" href="admin/qr-kit.html#lounge">Try a billiards QR</a></div>
         </div>
-        <div class="billiards__callout" data-reveal data-delay="150"><span>Interactive Three.js table</span><small>Drag · tap · break</small></div>
+        <div class="billiards-hud" aria-live="polite">
+          <span><small>Pocketed</small><strong id="pocketed-count">0 / 15</strong></span>
+          <button type="button" id="reset-rack">Reset rack</button>
+        </div>
       </div>
     </section>
 
@@ -338,30 +341,34 @@
 
     <section class="section experience-notes" aria-labelledby="notes-title">
       <div class="shell">
-        <div class="section-heading section-heading--split" data-reveal><div><p class="eyebrow">Where every hour feels like golden hour</p><h2 id="notes-title">A complete night, without changing venues.</h2></div><p>Coastal food, cold drinks, billiards and live entertainment come together in one destination built for easy nights and memorable celebrations.</p></div>
+        <div class="section-heading section-heading--split" data-reveal><div><p class="eyebrow">What Southernmost brings together</p><h2 id="notes-title">A complete night, without changing venues.</h2></div><p>These are experience highlights—not imported customer reviews. A verified review feed can be connected once the restaurant provides its approved Google Business profile.</p></div>
         <div class="reviews-track" id="experience-notes-track"></div>
       </div>
     </section>
 
-    <section class="visit-section" id="visit" aria-labelledby="visit-title">
-      <div class="visit__map"><iframe title="Map to Southernmost Bar and Grille" loading="lazy" src="https://www.google.com/maps?q=4449%20Okeechobee%20Blvd%2C%20West%20Palm%20Beach%2C%20FL%2033417&amp;output=embed" referrerpolicy="no-referrer-when-downgrade"></iframe></div>
-      <div class="visit__panel">
-        <p class="eyebrow eyebrow--gold">Find the end of the road</p>
-        <h2 id="visit-title">Come for dinner.<br /><em>Stay for the night.</em></h2>
-        <div class="visit__details">
-          <div><span>Address</span><strong>4449 Okeechobee Blvd<br />West Palm Beach, FL 33417</strong></div>
-          <div><span>Hours</span><strong>Mon–Thu · 11 AM–11 PM<br />Fri–Sun · 11 AM–2 AM</strong></div>
-          <div><span>Location</span><strong>Corner of Okeechobee<br />&amp; Military Trail</strong></div>
+    <section class="visit-section visit-section--editorial" id="visit" aria-labelledby="visit-title">
+      <div class="shell visit-shell">
+        <div class="visit-story" data-reveal>
+          <img class="visit-story__logo" src="assets/southernmost-logo-plate.webp" alt="Southernmost Bar and Grille" />
+          <p class="eyebrow eyebrow--gold">Through the mahogany doors</p>
+          <h2 id="visit-title">Your island night starts at Okeechobee &amp; Military.</h2>
+          <p>Pull in for dinner, stay for billiards and live music, and keep every round on one tab from your phone.</p>
+          <div class="visit-pills"><span>Free parking</span><span>Late weekends</span><span>Billiards nightly</span><span>Live music</span></div>
+          <div class="visit__actions"><a class="button button--coral" target="_blank" rel="noopener" data-directions-link><svg class="ui-icon"><use href="#icon-map"></use></svg>Get directions</a><button class="button button--glass" type="button" data-open-reservation>Reserve a table</button></div>
         </div>
-        <div class="visit__actions"><a class="button button--coral" target="_blank" rel="noopener" data-directions-link>Get directions</a><button class="button button--glass" type="button" data-open-reservation>Reserve</button></div>
+        <div class="visit-map-card" data-reveal data-delay="100">
+          <div class="visit-map-frame"><iframe title="Map to Southernmost Bar and Grille" loading="lazy" src="https://www.google.com/maps?q=4449%20Okeechobee%20Blvd%2C%20West%20Palm%20Beach%2C%20FL%2033417&amp;output=embed" referrerpolicy="no-referrer-when-downgrade"></iframe></div>
+          <div class="arrival-card"><span class="arrival-card__pin"><svg class="ui-icon"><use href="#icon-map"></use></svg></span><div><small>Arrive at Southernmost</small><strong>4449 Okeechobee Blvd</strong><p>West Palm Beach, FL 33417<br>Corner of Okeechobee &amp; Military Trail</p></div></div>
+          <div class="hours-card"><span>Hours</span><strong>Mon–Thu · 11 AM–11 PM</strong><strong>Fri–Sun · 11 AM–2 AM</strong></div>
+        </div>
       </div>
     </section>
   </main>
 
   <footer class="site-footer">
     <div class="shell footer__grid">
-      <div class="footer__brand"><a class="brand brand--footer" href="#top"><span class="brand__mark" aria-hidden="true"><svg viewBox="0 0 80 80"><path d="M13 52c10-6 18-8 28-3 8 4 16 4 26-3"/><path d="M40 48c0-17-7-25-17-32 13 1 19 8 21 18 2-12 10-18 23-19-10 8-17 17-19 33"/><circle cx="43" cy="21" r="6"/></svg></span><span class="brand__copy"><strong>Southernmost</strong><small>BAR &amp; GRILLE</small></span></a><p>A Palm Beach neighborhood escape for coastal food, cold drinks, billiards and live music.</p></div>
-      <div><h3>Explore</h3><a href="#story">Our story</a><a href="#experience">Experience</a><a href="#menu-book">Menu book</a><a href="#table-ordering">Table ordering</a><a href="#events">Events</a></div>
+      <div class="footer__brand"><a class="brand brand--footer brand--official" href="#top"><img class="footer-official-logo" src="assets/southernmost-wordmark.webp" alt="Southernmost Bar and Grille"></a><p>A Palm Beach neighborhood escape for coastal food, cold drinks, billiards and live music.</p></div>
+      <div><h3>Explore</h3><a href="#experience">Experience</a><a href="#menu-book">Menu book</a><a href="#table-ordering">Table ordering</a><a href="#events">Events</a></div>
       <div><h3>Visit</h3><p>4449 Okeechobee Blvd<br />West Palm Beach, FL 33417</p><p>Mon–Thu · 11–11<br />Fri–Sun · 11–2</p></div>
       <div><h3>Guest resources</h3><a href="admin/qr-kit.html">Table QR access</a><a data-delivery-link target="_blank" rel="noopener">Uber Eats delivery</a><button class="footer-link" data-open-reservation>Reservations</button><button class="footer-link" data-open-party>Private events</button></div>
       <div><h3>Policies</h3><a href="legal/terms.html">Terms of service</a><a href="legal/privacy.html">Privacy policy</a><a href="legal/allergens.html">Allergens &amp; alcohol</a><a href="legal/refunds.html">Orders &amp; refunds</a><a href="legal/accessibility.html">Accessibility</a></div>
@@ -370,41 +377,30 @@
   </footer>
 
   <button class="guide-launcher" type="button" data-open-guide aria-label="Open Southernmost Island Guide">
-    <span class="guide-launcher__orb" aria-hidden="true"><i></i><b>✦</b></span>
+    <span class="guide-launcher__icon"><svg class="ui-icon"><use href="#icon-chat"></use></svg><i></i></span>
     <span><small>Need a recommendation?</small><strong>Ask the Island Guide</strong></span>
   </button>
 
-  <div class="guide-backdrop" id="guide-backdrop" hidden></div>
-  <aside class="guide-panel" id="guide-panel" aria-hidden="true" aria-labelledby="guide-title">
-    <div class="guide-panel__header">
-      <div class="guide-identity"><span class="guide-identity__mark">✦</span><div><small>On-device menu intelligence</small><h2 id="guide-title">Southernmost Island Guide</h2></div></div>
-      <button class="close-button" type="button" data-close-guide aria-label="Close Island Guide">×</button>
-    </div>
-    <div class="guide-status"><span class="status-dot"></span><strong>No login. No API key. Menu-aware.</strong></div>
-    <div class="guide-messages" id="guide-messages" aria-live="polite"></div>
-    <div class="guide-prompts" id="guide-prompts">
-      <button type="button" data-guide-prompt="Recommend something spicy">Something spicy</button>
-      <button type="button" data-guide-prompt="What is happy hour?">Happy hour</button>
-      <button type="button" data-guide-prompt="Best seafood options">Seafood picks</button>
-      <button type="button" data-guide-prompt="How does the table tab work?">Table tab</button>
-    </div>
-    <form class="guide-form" id="guide-form">
-      <label for="guide-input">Ask about food, drinks, hours, billiards, events or table ordering</label>
-      <div><input id="guide-input" autocomplete="off" maxlength="180" placeholder="Try “best meal under $20”" /><button type="submit" aria-label="Send question">→</button></div>
-    </form>
-  </aside>
-
   <button class="floating-cart" type="button" data-open-cart aria-label="Open current order">
-    <span class="floating-cart__icon" aria-hidden="true">🛍</span>
+    <span class="floating-cart__icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-bag"></use></svg></span>
     <span><small id="floating-cart-label">Your order</small><strong><b data-cart-count>0</b> items · <span data-cart-total>$0.00</span></strong></span>
   </button>
 
   <div class="mobile-action-bar" aria-label="Quick actions">
-    <a href="#menu-book"><span>⌑</span>Menu</a>
-    <button type="button" data-open-guide><span>✦</span>Guide</button>
-    <button type="button" data-open-service><span>◉</span>Server</button>
-    <button type="button" data-open-cart><span>🛍</span>Order <b data-cart-count>0</b></button>
+    <a href="#menu-book"><svg class="ui-icon"><use href="#icon-book"></use></svg><span>Menu</span></a>
+    <button type="button" data-open-guide><svg class="ui-icon"><use href="#icon-chat"></use></svg><span>Guide</span></button>
+    <button type="button" data-open-service><svg class="ui-icon"><use href="#icon-bell"></use></svg><span>Server</span></button>
+    <button type="button" data-open-cart><svg class="ui-icon"><use href="#icon-bag"></use></svg><span>Order</span><b data-cart-count>0</b></button>
   </div>
+
+  <div class="guide-backdrop" id="guide-backdrop" hidden></div>
+  <aside class="guide-panel" id="guide-panel" aria-hidden="true" aria-labelledby="guide-title">
+    <div class="guide-panel__header"><div class="guide-identity"><span><svg class="ui-icon"><use href="#icon-chat"></use></svg></span><div><small>On-device menu intelligence</small><h2 id="guide-title">Southernmost Island Guide</h2></div></div><button class="close-button" type="button" data-close-guide aria-label="Close Island Guide"><svg class="ui-icon"><use href="#icon-close"></use></svg></button></div>
+    <div class="guide-status"><i></i><strong>No login. No API key. Menu-aware.</strong></div>
+    <div class="guide-messages" id="guide-messages" aria-live="polite"></div>
+    <div class="guide-prompts"><button type="button" data-guide-prompt="Recommend something spicy">Something spicy</button><button type="button" data-guide-prompt="Best seafood options">Seafood picks</button><button type="button" data-guide-prompt="Best meal under $20">Under $20</button><button type="button" data-guide-prompt="How does the table tab work?">Table tab</button></div>
+    <form class="guide-form" id="guide-form"><label class="sr-only" for="guide-input">Ask the Island Guide</label><input id="guide-input" autocomplete="off" maxlength="180" placeholder="Try “best meal under $20”"><button type="submit" aria-label="Send question"><svg class="ui-icon"><use href="#icon-arrow"></use></svg></button></form>
+  </aside>
 
   <div class="table-session-chip" id="table-session-chip" hidden>
     <button type="button" data-open-tab-center><span class="status-dot"></span><small>Table</small><strong id="chip-table">—</strong><em id="chip-total">$0.00</em></button>
@@ -436,8 +432,9 @@
 
   <div class="toast-region" aria-live="polite" aria-atomic="true" id="toast-region"></div>
 
-  <script src="data.js"></script>
-  <script src="app.js"></script>
-  <script type="module" src="three-scenes.js"></script>
+  <script src="data.js?v=20260725f"></script>
+  <script src="app.js?v=20260725f"></script>
+  <script src="upgrade.js?v=20260725f"></script>
+  <script type="module" src="three-scenes-v2.js?v=20260725f"></script>
 </body>
 </html>

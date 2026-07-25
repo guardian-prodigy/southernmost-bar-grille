@@ -10,7 +10,7 @@ The current build is a framework-free static application so the client can revie
 - `styles.css` — design system, responsive behavior, CSS 3D menu and motion
 - `data.js` — structured site, menu, modifier and event content
 - `app.js` — guest tab, menu, cart, forms, page-turning and local state
-- `three-scenes.js` — hero ocean, cocktail and billiards WebGL scenes
+- `three-scenes-v2.js` — recognizable island-bar hero, cocktail-bar and playable billiards WebGL scenes
 - `sw.js` — offline shell caching
 - `qr/*` — table-specific entry points
 

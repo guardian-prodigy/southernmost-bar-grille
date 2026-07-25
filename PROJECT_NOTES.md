@@ -1,19 +1,29 @@
-# Southernmost source notes
+# Content Reconciliation Notes
 
-The supplied illustrated menu boards are the pricing, modifier and happy-hour source of truth for this client website. The current public Southernmost website is the source for venue positioning, address, hours, billiards, live-music language and the Florida Keys / "do the most" story direction.
+The supplied prototype and current public website do not fully agree.
 
-## Confirmed for this build
+## Current public website values used
 
 - Address: 4449 Okeechobee Blvd, West Palm Beach, FL 33417
+- Location: Okeechobee at Military Trail
 - Hours: Monday–Thursday 11 AM–11 PM; Friday–Sunday 11 AM–2 AM
-- Happy hour from supplied menu: Monday–Friday 3–6 PM
-- Live entertainment: Friday and Saturday emphasis, plus a Sunday acoustic concept pending client confirmation
-- Billiards lounge and in-venue QR table ordering
+- Happy hour: daily 5–7 PM
+- Positioning: billiards nightly; live music Friday and Saturday; coastal food and island atmosphere
 
-## Do not publish as business contact information
+## Values intentionally treated as unconfirmed
 
-The phone number and email currently shown on the public reference site appear to be placeholders. They are intentionally excluded until the client supplies verified contact details.
+- `(561) 555-0144`
+- `hello@southernmost.com`
+- all menu prices and availability beyond the supplied material
+- all special-event dates and performer names
+- sample review text and ratings
+- reservation and ordering provider links
 
-## Menu dataset
+## Menu data
 
-The searchable menu and page-turning book are generated from `data.js`, which transcribes the supplied menu artwork. Client confirmation is still required before accepting live orders or connecting inventory, POS, SMS, email and payment services.
+The complete book/order dataset is generated from the supplied prototype files:
+
+- `src/data/menu.ts`
+- `src/data/experience.ts`
+
+Do not represent those values as confirmed client data until approved.
