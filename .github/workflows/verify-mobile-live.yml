@@ -18,7 +18,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          url="https://guardian-prodigy.github.io/southernmost-bar-grille/?v=20260725h&verify=2"
+          url="https://guardian-prodigy.github.io/southernmost-bar-grille/?v=20260725h&verify=3"
           for attempt in $(seq 1 48); do
             echo "Public deployment attempt ${attempt}/48"
             if curl -fsSL --connect-timeout 15 --max-time 60 "$url" -o /tmp/live.html \
@@ -43,7 +43,7 @@ jobs:
           npx playwright install chromium
 
       - name: Run mobile browser verification
-        id: browser-test
+        id: browser_test
         continue-on-error: true
         shell: bash
         run: |
@@ -61,7 +61,7 @@ jobs:
             page.on('pageerror', (error) => output.browserErrors.push(`pageerror: ${error.message}`));
             page.on('console', (message) => { if (message.type() === 'error') output.browserErrors.push(`console: ${message.text()}`); });
 
-            const url = 'https://guardian-prodigy.github.io/southernmost-bar-grille/?v=20260725h&verify=2';
+            const url = 'https://guardian-prodigy.github.io/southernmost-bar-grille/?v=20260725h&verify=3';
             await page.goto(url, { waitUntil: 'networkidle', timeout: 120000 });
             await page.waitForTimeout(1400);
 
@@ -169,4 +169,4 @@ jobs:
         if: always()
         shell: bash
         run: |
-          test "${{ steps.browser-test.outcome }}" = "success"
+          test "${{ steps.browser_test.outcome }}" = "success"
