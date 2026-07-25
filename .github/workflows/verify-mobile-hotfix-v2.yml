@@ -5,7 +5,6 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/verify-mobile-hotfix-v2.yml"
-      - ".github/scripts/verify-mobile-hotfix.mjs"
 
 permissions:
   contents: read
@@ -15,17 +14,26 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 6
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-
       - name: Install Playwright package
-        run: npm install --no-save --silent playwright@1.55.0
+        shell: bash
+        run: |
+          mkdir -p /tmp/mobile-verify
+          cd /tmp/mobile-verify
+          npm init -y >/dev/null 2>&1
+          npm install --no-save --silent playwright@1.55.0
+
+      - name: Download verification script
+        shell: bash
+        run: |
+          curl -fsSL --connect-timeout 15 --max-time 60 \
+            "https://raw.githubusercontent.com/guardian-prodigy/southernmost-bar-grille/6c07b1060531a8a8165159ebc71ce1f9e946b8a9/.github/scripts/verify-mobile-hotfix.mjs" \
+            -o /tmp/mobile-verify/check.mjs
 
       - name: Verify deployed mobile UI
-        run: node .github/scripts/verify-mobile-hotfix.mjs
+        shell: bash
+        run: |
+          cd /tmp/mobile-verify
+          NODE_PATH=/tmp/mobile-verify/node_modules node check.mjs
 
       - name: Upload screenshot
         if: always()
