@@ -1,0 +1,1 @@
+The files in this directory are ordered chunks of the complete Southernmost Bar & Grille website package. The GitHub Pages workflow joins and extracts them into `site/`, validates the application, commits the full materialized site tree, and deploys it through official GitHub Pages.
