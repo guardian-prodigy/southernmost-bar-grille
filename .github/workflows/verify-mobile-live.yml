@@ -18,7 +18,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          url="https://guardian-prodigy.github.io/southernmost-bar-grille/?v=20260725h&verify=1"
+          url="https://guardian-prodigy.github.io/southernmost-bar-grille/?v=20260725h&verify=2"
           for attempt in $(seq 1 48); do
             echo "Public deployment attempt ${attempt}/48"
             if curl -fsSL --connect-timeout 15 --max-time 60 "$url" -o /tmp/live.html \
@@ -40,115 +40,133 @@ jobs:
       - name: Install Chromium test runtime
         run: |
           npm install --no-save playwright@1.55.0
-          npx playwright install --with-deps chromium
+          npx playwright install chromium
 
       - name: Run mobile browser verification
+        id: browser-test
+        continue-on-error: true
         shell: bash
         run: |
           cat > /tmp/verify-mobile.mjs <<'EOF'
           import { chromium, devices } from 'playwright';
           import fs from 'node:fs';
 
-          const browser = await chromium.launch({ headless: true });
-          const context = await browser.newContext({
-            ...devices['Pixel 7'],
-            locale: 'en-US',
-            colorScheme: 'dark',
-          });
-          const page = await context.newPage();
-          const errors = [];
-          page.on('pageerror', (error) => errors.push(`pageerror: ${error.message}`));
-          page.on('console', (message) => {
-            if (message.type() === 'error') errors.push(`console: ${message.text()}`);
-          });
+          const output = { initial: null, guideOpen: null, cartOpen: null, browserErrors: [], failure: null };
+          let browser;
 
-          const url = 'https://guardian-prodigy.github.io/southernmost-bar-grille/?v=20260725h&verify=1';
-          await page.goto(url, { waitUntil: 'networkidle', timeout: 120000 });
-          await page.waitForTimeout(1200);
+          try {
+            browser = await chromium.launch({ headless: true });
+            const context = await browser.newContext({ ...devices['Pixel 7'], locale: 'en-US', colorScheme: 'dark' });
+            const page = await context.newPage();
+            page.on('pageerror', (error) => output.browserErrors.push(`pageerror: ${error.message}`));
+            page.on('console', (message) => { if (message.type() === 'error') output.browserErrors.push(`console: ${message.text()}`); });
 
-          const initial = await page.evaluate(() => {
-            const style = (selector) => {
-              const node = document.querySelector(selector);
-              if (!node) return null;
-              const computed = getComputedStyle(node);
-              return {
-                hidden: node.hidden,
-                display: computed.display,
-                visibility: computed.visibility,
-                opacity: Number(computed.opacity || 0),
-                filter: computed.filter,
-                backdropFilter: computed.backdropFilter || computed.webkitBackdropFilter || 'none',
-                transform: computed.transform,
-                pointerEvents: computed.pointerEvents,
+            const url = 'https://guardian-prodigy.github.io/southernmost-bar-grille/?v=20260725h&verify=2';
+            await page.goto(url, { waitUntil: 'networkidle', timeout: 120000 });
+            await page.waitForTimeout(1400);
+
+            output.initial = await page.evaluate(() => {
+              const style = (selector) => {
+                const node = document.querySelector(selector);
+                if (!node) return null;
+                const computed = getComputedStyle(node);
+                return {
+                  hidden: node.hidden,
+                  display: computed.display,
+                  visibility: computed.visibility,
+                  opacity: Number(computed.opacity || 0),
+                  filter: computed.filter,
+                  backdropFilter: computed.backdropFilter || computed.webkitBackdropFilter || 'none',
+                  transform: computed.transform,
+                  pointerEvents: computed.pointerEvents,
+                  rect: node.getBoundingClientRect().toJSON(),
+                };
               };
-            };
-            return {
-              bodyClasses: document.body.className,
-              guideBackdrop: style('#guide-backdrop'),
-              drawerBackdrop: style('#drawer-backdrop'),
-              modal: style('#flow-modal'),
-              heroCopy: style('.hero__copy'),
-              mobileBar: style('.mobile-action-bar'),
-              uiReady: document.documentElement.classList.contains('southernmost-ui-ready'),
-              viewport: { width: innerWidth, height: innerHeight },
-            };
-          });
+              return {
+                bodyClasses: document.body.className,
+                guideBackdrop: style('#guide-backdrop'),
+                drawerBackdrop: style('#drawer-backdrop'),
+                modal: style('#flow-modal'),
+                heroCopy: style('.hero__copy'),
+                heroTitle: style('#hero-title'),
+                mobileBar: style('.mobile-action-bar'),
+                guidePanel: style('#guide-panel'),
+                cartDrawer: style('#cart-drawer'),
+                uiReady: document.documentElement.classList.contains('southernmost-ui-ready'),
+                viewport: { width: innerWidth, height: innerHeight },
+              };
+            });
 
-          const assert = (condition, message) => {
-            if (!condition) throw new Error(message);
-          };
+            await page.screenshot({ path: '/tmp/southernmost-mobile-fixed.png', fullPage: true });
+            fs.writeFileSync('/tmp/mobile-initial.html', await page.content());
 
-          assert(initial.uiReady, 'Hotfix did not mark the UI ready.');
-          assert(!initial.bodyClasses.includes('no-scroll'), 'Body remained locked on initial load.');
-          for (const [name, layer] of [['guide', initial.guideBackdrop], ['drawer', initial.drawerBackdrop], ['modal', initial.modal]]) {
-            assert(layer, `${name} layer is missing.`);
-            assert(layer.hidden || layer.display === 'none' || (layer.visibility === 'hidden' && layer.pointerEvents === 'none'), `${name} layer is unexpectedly active: ${JSON.stringify(layer)}`);
-            assert(layer.backdropFilter === 'none', `${name} layer is blurring the page while closed: ${JSON.stringify(layer)}`);
+            const assert = (condition, message) => { if (!condition) throw new Error(message); };
+            assert(output.initial.uiReady, 'Hotfix did not mark the UI ready.');
+            assert(!output.initial.bodyClasses.includes('no-scroll'), 'Body remained locked on initial load.');
+
+            for (const [name, layer] of [['guide', output.initial.guideBackdrop], ['drawer', output.initial.drawerBackdrop], ['modal', output.initial.modal]]) {
+              assert(layer, `${name} layer is missing.`);
+              assert(layer.hidden || layer.display === 'none' || (layer.visibility === 'hidden' && layer.pointerEvents === 'none'), `${name} layer is unexpectedly active: ${JSON.stringify(layer)}`);
+              assert(layer.backdropFilter === 'none', `${name} layer is blurring the page while closed: ${JSON.stringify(layer)}`);
+            }
+
+            assert(output.initial.heroCopy && output.initial.heroCopy.opacity >= 0.99 && output.initial.heroCopy.visibility === 'visible', `Hero content is not visible: ${JSON.stringify(output.initial.heroCopy)}`);
+            assert(output.initial.heroCopy.filter === 'none', `Hero content is filtered: ${JSON.stringify(output.initial.heroCopy)}`);
+            assert(output.initial.mobileBar && output.initial.mobileBar.opacity >= 0.99 && output.initial.mobileBar.visibility === 'visible' && output.initial.mobileBar.display !== 'none', `Mobile dock is not stable: ${JSON.stringify(output.initial.mobileBar)}`);
+
+            const guideButton = page.locator('.mobile-action-bar [data-open-guide]');
+            await guideButton.click();
+            await page.waitForTimeout(450);
+            output.guideOpen = await page.evaluate(() => ({
+              panel: document.querySelector('#guide-panel')?.classList.contains('is-open'),
+              backdrop: document.querySelector('#guide-backdrop')?.classList.contains('is-open'),
+              hidden: document.querySelector('#guide-backdrop')?.hidden,
+              opacity: getComputedStyle(document.querySelector('#guide-backdrop')).opacity,
+            }));
+            assert(output.guideOpen.panel && output.guideOpen.backdrop && output.guideOpen.hidden === false && Number(output.guideOpen.opacity) > 0.9, `Guide did not open correctly: ${JSON.stringify(output.guideOpen)}`);
+            await page.locator('[data-close-guide]').click();
+            await page.waitForTimeout(400);
+            assert(await page.locator('#guide-backdrop').evaluate((node) => node.hidden), 'Guide backdrop did not close cleanly.');
+
+            const cartButton = page.locator('.mobile-action-bar [data-open-cart]');
+            await cartButton.click();
+            await page.waitForTimeout(450);
+            output.cartOpen = await page.evaluate(() => ({
+              drawer: document.querySelector('#cart-drawer')?.classList.contains('is-open'),
+              backdrop: document.querySelector('#drawer-backdrop')?.classList.contains('is-open'),
+              hidden: document.querySelector('#drawer-backdrop')?.hidden,
+              opacity: getComputedStyle(document.querySelector('#drawer-backdrop')).opacity,
+            }));
+            assert(output.cartOpen.drawer && output.cartOpen.backdrop && output.cartOpen.hidden === false && Number(output.cartOpen.opacity) > 0.9, `Cart did not open correctly: ${JSON.stringify(output.cartOpen)}`);
+            await page.locator('[data-close-cart]').first().click();
+            await page.waitForTimeout(400);
+            assert(await page.locator('#drawer-backdrop').evaluate((node) => node.hidden), 'Cart backdrop did not close cleanly.');
+          } catch (error) {
+            output.failure = error?.stack || String(error);
+          } finally {
+            fs.writeFileSync('/tmp/mobile-verification.json', JSON.stringify(output, null, 2));
+            await browser?.close().catch(() => {});
           }
-          assert(initial.heroCopy && initial.heroCopy.opacity >= 0.99 && initial.heroCopy.visibility === 'visible', `Hero content is not visible: ${JSON.stringify(initial.heroCopy)}`);
-          assert(initial.heroCopy.filter === 'none', `Hero content is filtered: ${JSON.stringify(initial.heroCopy)}`);
-          assert(initial.mobileBar && initial.mobileBar.opacity >= 0.99 && initial.mobileBar.visibility === 'visible', `Mobile dock is not stable: ${JSON.stringify(initial.mobileBar)}`);
 
-          await page.screenshot({ path: '/tmp/southernmost-mobile-fixed.png', fullPage: true });
-
-          await page.locator('[data-open-guide]').last().click();
-          await page.waitForTimeout(450);
-          const guideOpen = await page.evaluate(() => ({
-            panel: document.querySelector('#guide-panel')?.classList.contains('is-open'),
-            backdrop: document.querySelector('#guide-backdrop')?.classList.contains('is-open'),
-            hidden: document.querySelector('#guide-backdrop')?.hidden,
-          }));
-          assert(guideOpen.panel && guideOpen.backdrop && guideOpen.hidden === false, `Guide did not open correctly: ${JSON.stringify(guideOpen)}`);
-          await page.locator('[data-close-guide]').click();
-          await page.waitForTimeout(400);
-          assert(await page.locator('#guide-backdrop').evaluate((node) => node.hidden), 'Guide backdrop did not close cleanly.');
-
-          await page.locator('[data-open-cart]').last().click();
-          await page.waitForTimeout(450);
-          const cartOpen = await page.evaluate(() => ({
-            drawer: document.querySelector('#cart-drawer')?.classList.contains('is-open'),
-            backdrop: document.querySelector('#drawer-backdrop')?.classList.contains('is-open'),
-            hidden: document.querySelector('#drawer-backdrop')?.hidden,
-            opacity: getComputedStyle(document.querySelector('#drawer-backdrop')).opacity,
-          }));
-          assert(cartOpen.drawer && cartOpen.backdrop && cartOpen.hidden === false && Number(cartOpen.opacity) > 0.9, `Cart did not open correctly: ${JSON.stringify(cartOpen)}`);
-          await page.locator('[data-close-cart]').first().click();
-          await page.waitForTimeout(400);
-          assert(await page.locator('#drawer-backdrop').evaluate((node) => node.hidden), 'Cart backdrop did not close cleanly.');
-
-          await browser.close();
-
-          fs.writeFileSync('/tmp/mobile-verification.json', JSON.stringify({ initial, errors }, null, 2));
-          if (errors.length) throw new Error(`Browser errors detected:\n${errors.join('\n')}`);
-          console.log(JSON.stringify(initial, null, 2));
+          console.log(JSON.stringify(output, null, 2));
+          if (output.failure) process.exit(1);
           EOF
           node /tmp/verify-mobile.mjs
 
       - name: Upload mobile verification evidence
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: southernmost-mobile-visibility-20260725h
           path: |
             /tmp/southernmost-mobile-fixed.png
             /tmp/mobile-verification.json
+            /tmp/mobile-initial.html
+          if-no-files-found: warn
           retention-days: 14
+
+      - name: Enforce browser verification result
+        if: always()
+        shell: bash
+        run: |
+          test "${{ steps.browser-test.outcome }}" = "success"
