@@ -1,0 +1,42 @@
+name: Export current Southernmost source
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/export-current-source.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout audit branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Package source tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/southernmost-source
+          mkdir -p /tmp/southernmost-source
+          rsync -a --exclude='.git' --exclude='.github/workflows/export-current-source.yml' ./ /tmp/southernmost-source/
+          cd /tmp
+          zip -qr southernmost-current-source.zip southernmost-source
+          unzip -t southernmost-current-source.zip
+          sha256sum southernmost-current-source.zip > southernmost-current-source.sha256
+
+      - name: Upload source artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: southernmost-current-source
+          path: |
+            /tmp/southernmost-current-source.zip
+            /tmp/southernmost-current-source.sha256
+          if-no-files-found: error
+          retention-days: 2
