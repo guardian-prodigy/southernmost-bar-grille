@@ -21,8 +21,10 @@ concurrency:
 jobs:
   import:
     runs-on: ubuntu-latest
+    env:
+      TARGET_BRANCH: ${{ github.head_ref || 'deploy/final-refinement-20260725f' }}
     steps:
-      - name: Checkout repository
+      - name: Checkout target branch
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -53,13 +55,12 @@ jobs:
           test -n "$found"
           unzip -t /tmp/southernmost-final.zip
 
-      - name: Materialize and validate source branch
+      - name: Materialize final source tree
         shell: bash
-        env:
-          TARGET_BRANCH: ${{ github.head_ref || 'deploy/final-refinement-20260725f' }}
         run: |
           set -euo pipefail
-          git switch -C "$TARGET_BRANCH"
+          echo "Checked out branch: $(git branch --show-current)"
+          test "$(git branch --show-current)" = "$TARGET_BRANCH"
 
           rm -rf /tmp/southernmost-final
           mkdir -p /tmp/southernmost-final
@@ -70,10 +71,18 @@ jobs:
           touch .nojekyll
           rm -f .github/FINAL_REFINEMENT
 
-          npm run check
+          test -s index.html
+          test -s upgrade.css
+          test -s upgrade.js
+          test -s three-scenes-v2.js
           test -s assets/og-southernmost.jpg
           test -s assets/southernmost-wordmark.webp
-          test -s three-scenes-v2.js
+
+      - name: Validate final source tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run check
           test ! -e three-scenes.js
           grep -q "20260725f" index.html
           grep -q "southernmost-v14-20260725f" sw.js
@@ -82,12 +91,17 @@ jobs:
           ! grep -Rqi "guardian-prodigy.github.io/developers" robots.txt sitemap.xml index.html
           ! grep -Rqi "atob(" index.html app.js upgrade.js three-scenes-v2.js
 
+      - name: Commit final source to pull-request branch
+        shell: bash
+        run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
+          git status --short
           if git diff --cached --quiet; then
             echo "Final refinement is already materialized."
             exit 0
           fi
           git commit -m "Deploy final Southernmost refinement"
-          git push --force origin "HEAD:$TARGET_BRANCH"
+          git push --force-with-lease origin "HEAD:$TARGET_BRANCH"
