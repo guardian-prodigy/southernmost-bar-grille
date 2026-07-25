@@ -1,0 +1,242 @@
+name: Apply verified Southernmost mobile hotfix
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/MOBILE_HOTFIX"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: southernmost-mobile-hotfix-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    env:
+      TARGET_BRANCH: ${{ github.head_ref || 'fix/mobile-visibility-20260725h' }}
+    steps:
+      - name: Checkout hotfix branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref || github.ref_name }}
+
+      - name: Apply deterministic overlay and cache fix
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          cat > hotfix.css <<'EOF'
+          /* Critical mobile visibility hotfix — 20260725h */
+          [hidden] { display: none !important; }
+
+          .drawer-backdrop,
+          .guide-backdrop,
+          .modal {
+            visibility: hidden !important;
+            pointer-events: none !important;
+            opacity: 0 !important;
+            -webkit-backdrop-filter: none !important;
+            backdrop-filter: none !important;
+          }
+
+          .drawer-backdrop.is-open,
+          .drawer-backdrop.is-visible {
+            visibility: visible !important;
+            pointer-events: auto !important;
+            opacity: 1 !important;
+            -webkit-backdrop-filter: blur(6px) !important;
+            backdrop-filter: blur(6px) !important;
+          }
+
+          .guide-backdrop.is-open {
+            visibility: visible !important;
+            pointer-events: auto !important;
+            opacity: 1 !important;
+            -webkit-backdrop-filter: blur(4px) !important;
+            backdrop-filter: blur(4px) !important;
+          }
+
+          .modal.is-open {
+            visibility: visible !important;
+            pointer-events: auto !important;
+            opacity: 1 !important;
+          }
+
+          .guide-panel:not(.is-open),
+          .cart-drawer:not(.is-open) { pointer-events: none !important; }
+
+          body:not(.no-scroll),
+          body:not(.no-scroll) #main {
+            -webkit-filter: none !important;
+            filter: none !important;
+          }
+
+          @media (max-width: 900px) {
+            [data-reveal],
+            [data-reveal].is-visible {
+              opacity: 1 !important;
+              visibility: visible !important;
+              transform: none !important;
+              -webkit-filter: none !important;
+              filter: none !important;
+              animation: none !important;
+              transition: none !important;
+            }
+
+            .mobile-action-bar {
+              opacity: 1 !important;
+              visibility: visible !important;
+              transform: none !important;
+              animation: none !important;
+              transition: none !important;
+            }
+
+            .guide-launcher,
+            .floating-cart { display: none !important; }
+
+            .hero__copy,
+            .hero__portal,
+            .hero-sign-card,
+            .mobile-book-reader,
+            .mobile-book-shell {
+              opacity: 1 !important;
+              visibility: visible !important;
+              -webkit-filter: none !important;
+              filter: none !important;
+            }
+          }
+          EOF
+
+          cat > hotfix.js <<'EOF'
+          (() => {
+            "use strict";
+
+            const resetTransientLayers = () => {
+              document.body?.classList.remove("no-scroll");
+              [
+                ["#guide-backdrop", "#guide-panel"],
+                ["#drawer-backdrop", "#cart-drawer"],
+              ].forEach(([backdropSelector, panelSelector]) => {
+                const backdrop = document.querySelector(backdropSelector);
+                const panel = document.querySelector(panelSelector);
+                backdrop?.classList.remove("is-open", "is-visible");
+                if (backdrop) backdrop.hidden = true;
+                panel?.classList.remove("is-open");
+                panel?.setAttribute("aria-hidden", "true");
+              });
+
+              const modal = document.querySelector("#flow-modal");
+              modal?.classList.remove("is-open");
+              modal?.setAttribute("aria-hidden", "true");
+              if (modal) modal.hidden = true;
+
+              if (matchMedia("(max-width: 900px)").matches) {
+                document.querySelectorAll("[data-reveal]").forEach((node) => node.classList.add("is-visible"));
+                const bar = document.querySelector(".mobile-action-bar");
+                if (bar) {
+                  bar.style.removeProperty("transform");
+                  bar.style.removeProperty("opacity");
+                  bar.style.removeProperty("visibility");
+                }
+              }
+              document.documentElement.classList.add("southernmost-ui-ready");
+            };
+
+            const retireStaleWorker = async () => {
+              if (!("serviceWorker" in navigator)) return;
+              try {
+                const wasControlled = Boolean(navigator.serviceWorker.controller);
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                await Promise.all(registrations.map((registration) => registration.unregister()));
+                if ("caches" in window) {
+                  const keys = await caches.keys();
+                  await Promise.all(keys.filter((key) => key.startsWith("southernmost-")).map((key) => caches.delete(key)));
+                }
+                if (wasControlled && !sessionStorage.getItem("southernmost-worker-retired-20260725h")) {
+                  sessionStorage.setItem("southernmost-worker-retired-20260725h", "1");
+                  const url = new URL(location.href);
+                  url.searchParams.set("v", "20260725h");
+                  url.searchParams.set("fresh", "1");
+                  location.replace(url.toString());
+                }
+              } catch {}
+            };
+
+            if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", resetTransientLayers, { once: true });
+            else resetTransientLayers();
+            addEventListener("pageshow", resetTransientLayers);
+            addEventListener("load", retireStaleWorker, { once: true });
+            setTimeout(resetTransientLayers, 80);
+          })();
+          EOF
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          index = Path("index.html")
+          text = index.read_text().replace("20260725f", "20260725h")
+          if "hotfix.css?v=20260725h" not in text:
+              text = text.replace(
+                  '<link rel="stylesheet" href="upgrade.css?v=20260725h" />',
+                  '<link rel="stylesheet" href="upgrade.css?v=20260725h" />\n  <link rel="stylesheet" href="hotfix.css?v=20260725h" />'
+              )
+          if "hotfix.js?v=20260725h" not in text:
+              text = text.replace(
+                  '<script src="upgrade.js?v=20260725h"></script>',
+                  '<script src="upgrade.js?v=20260725h"></script>\n  <script src="hotfix.js?v=20260725h"></script>'
+              )
+          index.write_text(text)
+
+          app = Path("app.js")
+          source = app.read_text()
+          if "serviceWorker.register" in source:
+              pattern = re.compile(
+                  r'  if \("serviceWorker" in navigator && location\.protocol\.startsWith\("http"\)\) \{.*?\n  \}\n\}\)\(\);\s*$',
+                  re.S,
+              )
+              replacement = '''  if ("serviceWorker" in navigator) {
+                addEventListener("load", async () => {
+                  try {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    await Promise.all(registrations.map((registration) => registration.unregister()));
+                    if ("caches" in window) {
+                      const keys = await caches.keys();
+                      await Promise.all(keys.filter((key) => key.startsWith("southernmost-")).map((key) => caches.delete(key)));
+                    }
+                  } catch {}
+                }, { once: true });
+              }
+            })();
+            '''
+              source, count = pattern.subn(replacement, source)
+              if count != 1:
+                  raise SystemExit(f"Expected one service-worker block, replaced {count}")
+              app.write_text(source)
+          PY
+
+          rm -f .github/MOBILE_HOTFIX
+          node --check app.js
+          node --check upgrade.js
+          node --check hotfix.js
+          grep -q "hotfix.css?v=20260725h" index.html
+          grep -q "hotfix.js?v=20260725h" index.html
+          grep -q "drawer-backdrop.is-open" hotfix.css
+          grep -q "southernmost-ui-ready" hotfix.js
+          ! grep -q "serviceWorker.register" app.js
+
+      - name: Commit hotfix to pull-request branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Fix mobile blur overlay and stale service worker"
+          git push --force-with-lease origin "HEAD:$TARGET_BRANCH"
