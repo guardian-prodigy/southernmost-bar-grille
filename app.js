@@ -734,12 +734,17 @@
   renderCart();
   setInterval(() => { if (session?.orders?.length) renderSessionState(); }, 7000);
 
-  if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
-    addEventListener("load", async () => {
-      try {
-        const registration = await navigator.serviceWorker.register("sw.js?v=20260725f", { updateViaCache: "none" });
-        registration.update().catch(() => {});
-      } catch {}
-    });
-  }
-})();
+  if ("serviceWorker" in navigator) {
+      addEventListener("load", async () => {
+        try {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(registrations.map((registration) => registration.unregister()));
+          if ("caches" in window) {
+            const keys = await caches.keys();
+            await Promise.all(keys.filter((key) => key.startsWith("southernmost-")).map((key) => caches.delete(key)));
+          }
+        } catch {}
+      }, { once: true });
+    }
+  })();
+  
