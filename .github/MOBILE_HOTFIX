@@ -1,0 +1,2 @@
+Fix version: 20260725h
+Reason: remove invisible blur backdrops, reveal mobile content deterministically, and retire stale service-worker caches.
