@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/verify-mobile-hotfix-v2.yml"
+      - ".github/scripts/verify-mobile-hotfix.mjs"
 
 permissions:
   contents: read
@@ -16,110 +17,13 @@ jobs:
       image: mcr.microsoft.com/playwright:v1.55.0-noble
     timeout-minutes: 6
     steps:
+      - uses: actions/checkout@v4
+
       - name: Install Playwright package
         run: npm install --no-save --silent playwright@1.55.0
 
       - name: Verify deployed mobile UI
-        shell: bash
-        run: |
-          cat > /tmp/check.mjs <<'EOF'
-          import { chromium, devices } from 'playwright';
-
-          const browser = await chromium.launch({ headless: true });
-          const context = await browser.newContext({ ...devices['Pixel 7'], colorScheme: 'dark' });
-          const page = await context.newPage();
-          const browserErrors = [];
-          page.on('pageerror', error => browserErrors.push(`pageerror:${error.message}`));
-
-          const url = 'https://guardian-prodigy.github.io/southernmost-bar-grille/?v=20260725h&fresh=1&verify=4';
-          await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 120000 });
-          await page.waitForTimeout(3500);
-
-          const state = await page.evaluate(() => {
-            const read = (selector) => {
-              const el = document.querySelector(selector);
-              if (!el) return null;
-              const cs = getComputedStyle(el);
-              const rect = el.getBoundingClientRect();
-              return {
-                hidden: el.hidden,
-                classes: el.className,
-                display: cs.display,
-                visibility: cs.visibility,
-                opacity: cs.opacity,
-                filter: cs.filter,
-                backdrop: cs.backdropFilter || cs.webkitBackdropFilter || 'none',
-                pointerEvents: cs.pointerEvents,
-                transform: cs.transform,
-                rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
-              };
-            };
-            return {
-              href: location.href,
-              bodyClass: document.body.className,
-              ready: document.documentElement.classList.contains('southernmost-ui-ready'),
-              hero: read('.hero__copy'),
-              heroTitle: read('#hero-title'),
-              guideBackdrop: read('#guide-backdrop'),
-              drawerBackdrop: read('#drawer-backdrop'),
-              modal: read('#flow-modal'),
-              mobileBar: read('.mobile-action-bar'),
-              guidePanel: read('#guide-panel'),
-              cartDrawer: read('#cart-drawer'),
-            };
-          });
-
-          console.log('INITIAL_STATE=' + JSON.stringify(state));
-          console.log('BROWSER_ERRORS=' + JSON.stringify(browserErrors));
-
-          const fail = message => { throw new Error(`${message}\nSTATE=${JSON.stringify(state)}\nERRORS=${JSON.stringify(browserErrors)}`); };
-          if (!state.ready) fail('UI readiness marker is missing');
-          if (state.bodyClass.includes('no-scroll')) fail('Body is locked on initial load');
-          for (const [name, layer] of Object.entries({guideBackdrop: state.guideBackdrop, drawerBackdrop: state.drawerBackdrop, modal: state.modal})) {
-            if (!layer) fail(`${name} is missing`);
-            const closed = layer.hidden || layer.display === 'none' || (layer.visibility === 'hidden' && layer.pointerEvents === 'none');
-            if (!closed) fail(`${name} is active while closed`);
-            if (layer.backdrop !== 'none') fail(`${name} applies blur while closed`);
-          }
-          if (!state.hero || state.hero.visibility !== 'visible' || Number(state.hero.opacity) < .99 || state.hero.filter !== 'none') fail('Hero copy is not fully visible');
-          if (!state.heroTitle || state.heroTitle.rect.width < 100 || state.heroTitle.rect.height < 50) fail('Hero title has no meaningful rendered area');
-          if (!state.mobileBar || state.mobileBar.display === 'none' || state.mobileBar.visibility !== 'visible' || Number(state.mobileBar.opacity) < .99) fail('Mobile action bar is not visible');
-
-          const guideButton = page.locator('.mobile-action-bar [data-open-guide]');
-          await guideButton.click();
-          await page.waitForTimeout(450);
-          const guideOpen = await page.evaluate(() => ({
-            panel: document.querySelector('#guide-panel')?.classList.contains('is-open'),
-            backdrop: document.querySelector('#guide-backdrop')?.classList.contains('is-open'),
-            hidden: document.querySelector('#guide-backdrop')?.hidden,
-            opacity: getComputedStyle(document.querySelector('#guide-backdrop')).opacity,
-          }));
-          console.log('GUIDE_OPEN=' + JSON.stringify(guideOpen));
-          if (!(guideOpen.panel && guideOpen.backdrop && guideOpen.hidden === false && Number(guideOpen.opacity) > .9)) throw new Error('Guide open state failed');
-          await page.locator('[data-close-guide]').click();
-          await page.waitForTimeout(400);
-          if (!(await page.locator('#guide-backdrop').evaluate(el => el.hidden))) throw new Error('Guide did not close');
-
-          const cartButton = page.locator('.mobile-action-bar [data-open-cart]');
-          await cartButton.click();
-          await page.waitForTimeout(450);
-          const cartOpen = await page.evaluate(() => ({
-            drawer: document.querySelector('#cart-drawer')?.classList.contains('is-open'),
-            backdrop: document.querySelector('#drawer-backdrop')?.classList.contains('is-open'),
-            hidden: document.querySelector('#drawer-backdrop')?.hidden,
-            opacity: getComputedStyle(document.querySelector('#drawer-backdrop')).opacity,
-          }));
-          console.log('CART_OPEN=' + JSON.stringify(cartOpen));
-          if (!(cartOpen.drawer && cartOpen.backdrop && cartOpen.hidden === false && Number(cartOpen.opacity) > .9)) throw new Error('Cart open state failed');
-          await page.locator('[data-close-cart]').first().click();
-          await page.waitForTimeout(400);
-          if (!(await page.locator('#drawer-backdrop').evaluate(el => el.hidden))) throw new Error('Cart did not close');
-
-          await page.screenshot({ path: '/tmp/mobile-hotfix-live.png', fullPage: true });
-          await browser.close();
-          console.log('MOBILE_HOTFIX_VERIFIED');
-          EOF
-          node /tmp/check.mjs
+        run: node .github/scripts/verify-mobile-hotfix.mjs
 
       - name: Upload screenshot
         if: always()
