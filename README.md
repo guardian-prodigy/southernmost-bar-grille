@@ -18,6 +18,8 @@ The `Publish Southernmost` workflow materializes the standalone site in `site/` 
 
 Live URL: `https://guardian-prodigy.github.io/southernmost-bar-grille/`
 
+Deployment trigger: client preview publication.
+
 ## Local development
 
 ```bash
