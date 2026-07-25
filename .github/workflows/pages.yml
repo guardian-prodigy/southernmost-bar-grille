@@ -1,28 +1,45 @@
 name: Deploy Southernmost
+
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
+
 permissions:
   contents: read
   pages: write
   id-token: write
+
 concurrency:
   group: github-pages
   cancel-in-progress: true
+
 jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Validate website package
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Validate complete website
+        shell: bash
         run: |
-          test -s index.html
-          test -s sw.js
-          test -s manifest.webmanifest
+          set -euo pipefail
+          npm run check
+          test -s assets/og-southernmost.jpg
+          test -s assets/southernmost-wordmark.webp
+          test -s three-scenes-v2.js
+          test -s upgrade.css
+          test -s upgrade.js
+          grep -q "southernmost-bar-grille" robots.txt
+          grep -q "southernmost-bar-grille" sitemap.xml
+          ! grep -Rqi "guardian-prodigy.github.io/developers" robots.txt sitemap.xml index.html
+          ! grep -Rqi "atob(" index.html app.js upgrade.js three-scenes-v2.js
           ! grep -Eqi '>[^<]*(demo|demonstration)[^<]*<' index.html
+
   deploy:
     if: github.event_name != 'pull_request'
     needs: validate
