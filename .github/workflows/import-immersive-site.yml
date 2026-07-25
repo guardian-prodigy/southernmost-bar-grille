@@ -62,15 +62,18 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf /tmp/southernmost-site
+          rm -rf /tmp/southernmost-site /tmp/current-github
           mkdir -p /tmp/southernmost-site
           unzip -q /tmp/southernmost.zip -d /tmp/southernmost-site
           test -s /tmp/southernmost-site/index.html
           test -s /tmp/southernmost-site/styles.css
           test -s /tmp/southernmost-site/app.js
           test -s /tmp/southernmost-site/three-scenes.js
+          cp -a .github /tmp/current-github
           find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
           cp -a /tmp/southernmost-site/. .
+          rm -rf .github
+          cp -a /tmp/current-github .github
           touch .nojekyll
 
       - name: Validate website
@@ -79,12 +82,13 @@ jobs:
           set -euo pipefail
           npm run check
 
-      - name: Commit production source to main
+      - name: Stage production source branch
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B generated/immersive-source
           git add -A
-          git commit -m "Deploy immersive Southernmost client experience"
-          git push origin HEAD:main
+          git commit -m "Stage immersive Southernmost client experience"
+          git push --force origin HEAD:generated/immersive-source
