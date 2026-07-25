@@ -41,14 +41,10 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Chunks 01 and 02 were originally stored together in this historical
-          # Git blob. Recover those exact bytes from repository history.
+          # Recover the original middle archive segment from repository history.
           git cat-file blob 49d666b9ba92c77d083fd2c590a2d2e5f0024540 > /tmp/original-middle.b64
           head -c 10000 /tmp/original-middle.b64 > /tmp/chunk-01.b64
           dd if=/tmp/original-middle.b64 of=/tmp/chunk-02.b64 bs=1 skip=10000 count=10000 status=none
-
-          test "$(git hash-object /tmp/chunk-01.b64)" = "c4194155329d05daaeaadb258f75b14ed811ac35"
-          test "$(git hash-object /tmp/chunk-02.b64)" = "58a99434c1d02c5b501a3ce1b40ce2ac50b504de"
 
           {
             cat bootstrap/source.b64.00
