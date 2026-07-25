@@ -10,6 +10,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: verify-final-southernmost-live
+  cancel-in-progress: true
+
 jobs:
   verify-live:
     runs-on: ubuntu-latest
@@ -38,7 +42,8 @@ jobs:
               && grep -q "mobile-action-bar" /tmp/upgrade.css \
               && grep -q "touch-action:pan-y" /tmp/upgrade.css \
               && curl -fsSL --connect-timeout 15 --max-time 60 "$base/upgrade.js?v=20260725f" -o /tmp/upgrade.js \
-              && grep -q "mobileBook" /tmp/upgrade.js \
+              && grep -q "mobile-book-reader" /tmp/upgrade.js \
+              && grep -q "pointerdown" /tmp/upgrade.js \
               && curl -fsSL --connect-timeout 15 --max-time 60 "$base/three-scenes-v2.js?v=20260725f" -o /tmp/three.js \
               && grep -q "THREE" /tmp/three.js \
               && grep -q "pocket" /tmp/three.js \
