@@ -1,0 +1,49 @@
+name: Verify live Southernmost experience
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/verify-live.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-live:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for and verify GitHub Pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="https://guardian-prodigy.github.io/southernmost-bar-grille/?v=d91489b1"
+          asset_base="https://guardian-prodigy.github.io/southernmost-bar-grille"
+
+          for attempt in $(seq 1 36); do
+            echo "Verification attempt ${attempt}/36"
+            rm -f /tmp/live.html /tmp/styles.css /tmp/three-scenes.js
+
+            if curl -fsSL --connect-timeout 15 --max-time 45 "$url" -o /tmp/live.html \
+              && grep -q "Southernmost Island Guide" /tmp/live.html \
+              && grep -q "menu-book" /tmp/live.html \
+              && grep -q "styles.css" /tmp/live.html \
+              && grep -q "three-scenes.js" /tmp/live.html \
+              && ! grep -q "atob(" /tmp/live.html \
+              && curl -fsSL --connect-timeout 15 --max-time 45 "$asset_base/styles.css?v=d91489b1" -o /tmp/styles.css \
+              && grep -q -- "--ink:" /tmp/styles.css \
+              && curl -fsSL --connect-timeout 15 --max-time 45 "$asset_base/three-scenes.js?v=d91489b1" -o /tmp/three-scenes.js \
+              && grep -q "THREE" /tmp/three-scenes.js; then
+              echo "Final live immersive Southernmost site verified successfully."
+              wc -c /tmp/live.html /tmp/styles.css /tmp/three-scenes.js
+              exit 0
+            fi
+
+            echo "Final Pages deployment is not ready yet. Retrying in 10 seconds..."
+            sleep 10
+          done
+
+          echo "GitHub Pages never served the expected final immersive build."
+          head -c 1000 /tmp/live.html || true
+          exit 1
