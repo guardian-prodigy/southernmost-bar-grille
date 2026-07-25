@@ -1,0 +1,63 @@
+name: Verify final Southernmost live site
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/verify-final-live.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-live:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for and verify the public website
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://guardian-prodigy.github.io/southernmost-bar-grille"
+          url="$base/?v=20260725f"
+
+          for attempt in $(seq 1 48); do
+            echo "Live verification attempt ${attempt}/48"
+            rm -f /tmp/index.html /tmp/upgrade.css /tmp/upgrade.js /tmp/three.js /tmp/robots.txt /tmp/og.jpg /tmp/wordmark.webp
+
+            if curl -fsSL --connect-timeout 15 --max-time 60 "$url" -o /tmp/index.html \
+              && grep -q "upgrade.css?v=20260725f" /tmp/index.html \
+              && grep -q "three-scenes-v2.js?v=20260725f" /tmp/index.html \
+              && grep -q "mobile-book-reader" /tmp/index.html \
+              && grep -q "southernmost-wordmark.webp" /tmp/index.html \
+              && grep -q "icon-chat" /tmp/index.html \
+              && grep -q "Palm Beach nights" /tmp/index.html \
+              && ! grep -q "atob(" /tmp/index.html \
+              && ! grep -q "Interactive Three.js" /tmp/index.html \
+              && curl -fsSL --connect-timeout 15 --max-time 60 "$base/upgrade.css?v=20260725f" -o /tmp/upgrade.css \
+              && grep -q "mobile-action-bar" /tmp/upgrade.css \
+              && grep -q "touch-action:pan-y" /tmp/upgrade.css \
+              && curl -fsSL --connect-timeout 15 --max-time 60 "$base/upgrade.js?v=20260725f" -o /tmp/upgrade.js \
+              && grep -q "mobileBook" /tmp/upgrade.js \
+              && curl -fsSL --connect-timeout 15 --max-time 60 "$base/three-scenes-v2.js?v=20260725f" -o /tmp/three.js \
+              && grep -q "THREE" /tmp/three.js \
+              && grep -q "pocket" /tmp/three.js \
+              && curl -fsSL --connect-timeout 15 --max-time 60 "$base/robots.txt?v=20260725f" -o /tmp/robots.txt \
+              && grep -q "southernmost-bar-grille/sitemap.xml" /tmp/robots.txt \
+              && curl -fsSL --connect-timeout 15 --max-time 60 "$base/assets/og-southernmost.jpg?v=20260725f" -o /tmp/og.jpg \
+              && test "$(wc -c < /tmp/og.jpg)" -gt 50000 \
+              && curl -fsSL --connect-timeout 15 --max-time 60 "$base/assets/southernmost-wordmark.webp?v=20260725f" -o /tmp/wordmark.webp \
+              && test "$(wc -c < /tmp/wordmark.webp)" -gt 5000; then
+              echo "Final Southernmost GitHub Pages deployment verified successfully."
+              wc -c /tmp/index.html /tmp/upgrade.css /tmp/upgrade.js /tmp/three.js /tmp/og.jpg /tmp/wordmark.webp
+              exit 0
+            fi
+
+            echo "Public Pages endpoint is not serving the final refinement yet. Retrying in 10 seconds..."
+            sleep 10
+          done
+
+          echo "The public site did not reach the expected final state."
+          echo "Current response preview:"
+          head -c 1500 /tmp/index.html || true
+          exit 1
