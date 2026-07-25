@@ -42,6 +42,3 @@ The front-end flows are complete for client review. Real SMS, payments, point-of
 ## AJL WebCraft
 
 Designed and engineered by [AJL WebCraft](https://ajlwebcraft.com).
-
-- On-device Southernmost Island Guide for menu recommendations, venue questions and QR-tab help; no API key or external model service required.
-- Public-site story language and venue positioning integrated into the new experience layer.
