@@ -12,6 +12,12 @@ Production-oriented client website for Southernmost Bar & Grille in West Palm Be
 - Pickup, dine-in, billiards-station, and Uber Eats delivery paths
 - Reservations, events, legal policies, accessibility, PWA metadata, QR landing pages, and SEO files
 
+## Deployment
+
+The `Publish Southernmost` workflow materializes the standalone site in `site/` and deploys it through GitHub Pages.
+
+Live URL: `https://guardian-prodigy.github.io/southernmost-bar-grille/`
+
 ## Local development
 
 ```bash
