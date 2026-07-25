@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/import-immersive-site.yml"
+      - ".github/IMPORT_VERIFY"
   pull_request:
     branches: [main]
     paths:
@@ -78,8 +79,7 @@ jobs:
           set -euo pipefail
           npm run check
 
-      - name: Commit production source
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+      - name: Commit production source to main
         shell: bash
         run: |
           set -euo pipefail
