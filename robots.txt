@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://guardian-prodigy.github.io/southernmost-bar-grille/sitemap.xml

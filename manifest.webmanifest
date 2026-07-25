@@ -1,0 +1,13 @@
+{
+  "name": "Southernmost Bar & Grille",
+  "short_name": "Southernmost",
+  "description": "Coastal kitchen, tropical cocktails, billiards, live music and table-side ordering in West Palm Beach.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#041f1c",
+  "theme_color": "#041f1c",
+  "icons": [
+    {"src":"assets/favicon.svg","sizes":"any","type":"image/svg+xml"}
+  ]
+}
