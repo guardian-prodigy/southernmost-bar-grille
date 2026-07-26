@@ -26,16 +26,35 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          raw="https://raw.githubusercontent.com/guardian-prodigy/southernmost-bar-grille/refs/heads/deploy/production-polish-20260726b/.deploy/release-20260726b"
+          root="https://raw.githubusercontent.com/guardian-prodigy/southernmost-bar-grille/refs/heads/deploy/production-polish-20260726b/.deploy"
+          original="$root/release-20260726b"
+          fixed="$root/release-20260726b-fix"
           rm -rf /tmp/southernmost-parts
           mkdir -p /tmp/southernmost-parts
-          for part in 00 01 02 03; do
-            curl -fsSL --retry 3 --connect-timeout 20 --max-time 120 "$raw/part-$part" -o "/tmp/southernmost-parts/part-$part"
-            echo "part-$part bytes: $(wc -c < "/tmp/southernmost-parts/part-$part")"
-          done
 
-          cat /tmp/southernmost-parts/part-* > /tmp/southernmost-release.b64
-          echo "combined base64 bytes: $(wc -c < /tmp/southernmost-release.b64)"
+          curl -fsSL --retry 3 --connect-timeout 20 --max-time 120 "$original/part-00" -o /tmp/southernmost-parts/part-00
+          for segment in 00 01 02; do
+            curl -fsSL --retry 3 --connect-timeout 20 --max-time 120 "$fixed/part01-$segment" -o "/tmp/southernmost-parts/part01-$segment"
+          done
+          cat /tmp/southernmost-parts/part01-* > /tmp/southernmost-parts/part-01
+          curl -fsSL --retry 3 --connect-timeout 20 --max-time 120 "$original/part-02" -o /tmp/southernmost-parts/part-02
+          for segment in 00 01 02; do
+            curl -fsSL --retry 3 --connect-timeout 20 --max-time 120 "$fixed/part03-$segment" -o "/tmp/southernmost-parts/part03-$segment"
+          done
+          cat /tmp/southernmost-parts/part03-* > /tmp/southernmost-parts/part-03
+
+          test "$(wc -c < /tmp/southernmost-parts/part-00)" -eq 18000
+          test "$(wc -c < /tmp/southernmost-parts/part-01)" -eq 18000
+          test "$(wc -c < /tmp/southernmost-parts/part-02)" -eq 18000
+          test "$(wc -c < /tmp/southernmost-parts/part-03)" -eq 16804
+          printf 'part sizes: %s %s %s %s\n' \
+            "$(wc -c < /tmp/southernmost-parts/part-00)" \
+            "$(wc -c < /tmp/southernmost-parts/part-01)" \
+            "$(wc -c < /tmp/southernmost-parts/part-02)" \
+            "$(wc -c < /tmp/southernmost-parts/part-03)"
+
+          cat /tmp/southernmost-parts/part-00 /tmp/southernmost-parts/part-01 /tmp/southernmost-parts/part-02 /tmp/southernmost-parts/part-03 > /tmp/southernmost-release.b64
+          test "$(wc -c < /tmp/southernmost-release.b64)" -eq 70804
           base64 --decode /tmp/southernmost-release.b64 > /tmp/southernmost-release.tar.gz
           actual="$(sha256sum /tmp/southernmost-release.tar.gz | awk '{print $1}')"
           echo "release SHA-256: $actual"
