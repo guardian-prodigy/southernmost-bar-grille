@@ -24,10 +24,10 @@ jobs:
           ref: deploy/platform-v4-20260727a
           fetch-depth: 0
 
-      - name: Reconstruct and verify source archive
+      - name: Reconstruct and diagnose source archive
         shell: bash
         run: |
-          set -euo pipefail
+          set -u
           expected_names=(part-00 part-01 part-02 part-03 part-04 part-05 part-06 part-07 part-08 part-09 part-10 part-11)
           expected_lengths=(12000 12000 12000 12000 12000 12000 12000 12000 12000 12000 12000 10140)
           expected_hashes=(
@@ -45,35 +45,76 @@ jobs:
             4a3076ba0a6a6a55b893a24ea0d9ac3220e06bd5e2e10de0f09f35f1c69b170a
           )
 
-          test -d .deploy/platform-v4
-          actual_count="$(find .deploy/platform-v4 -maxdepth 1 -type f -name 'part-*' | wc -l | tr -d ' ')"
-          echo "Found ${actual_count} staged parts"
-          test "$actual_count" -eq 12
+          diagnostics=/tmp/platform-v4-diagnostics.txt
+          : > "$diagnostics"
+          valid=1
+          actual_count="$(find .deploy/platform-v4 -maxdepth 1 -type f -name 'part-*' 2>/dev/null | wc -l | tr -d ' ')"
+          echo "part_count actual=${actual_count} expected=12" | tee -a "$diagnostics"
+          [ "$actual_count" -eq 12 ] || valid=0
 
           for index in "${!expected_names[@]}"; do
             file=".deploy/platform-v4/${expected_names[$index]}"
-            test -f "$file"
+            if [ ! -f "$file" ]; then
+              echo "${expected_names[$index]} MISSING expected_length=${expected_lengths[$index]} expected_sha256=${expected_hashes[$index]}" | tee -a "$diagnostics"
+              valid=0
+              continue
+            fi
             actual_length="$(wc -c < "$file" | tr -d ' ')"
             actual_hash="$(sha256sum "$file" | awk '{print $1}')"
-            echo "${expected_names[$index]} length=${actual_length} sha256=${actual_hash}"
-            test "$actual_length" -eq "${expected_lengths[$index]}"
-            test "$actual_hash" = "${expected_hashes[$index]}"
+            echo "${expected_names[$index]} actual_length=${actual_length} expected_length=${expected_lengths[$index]} actual_sha256=${actual_hash} expected_sha256=${expected_hashes[$index]}" | tee -a "$diagnostics"
+            [ "$actual_length" -eq "${expected_lengths[$index]}" ] || valid=0
+            [ "$actual_hash" = "${expected_hashes[$index]}" ] || valid=0
           done
 
-          : > /tmp/platform-v4.b64
-          for name in "${expected_names[@]}"; do
-            cat ".deploy/platform-v4/${name}" >> /tmp/platform-v4.b64
-          done
-          test "$(wc -c < /tmp/platform-v4.b64 | tr -d ' ')" -eq 142140
-          base64 --decode /tmp/platform-v4.b64 > /tmp/platform-v4.tar.gz
-          echo "abd2e35e7ee921ecd765f54e673550bc7daec7b01fe31b7a50ae2f9b8327c355  /tmp/platform-v4.tar.gz" | sha256sum --check --strict
-          test "$(wc -c < /tmp/platform-v4.tar.gz | tr -d ' ')" -eq 106603
-          tar -tzf /tmp/platform-v4.tar.gz > /tmp/platform-v4-files.txt
-          grep -q '^index.html$' /tmp/platform-v4-files.txt
-          grep -q '^platform.js$' /tmp/platform-v4-files.txt
-          grep -q '^order/index.html$' /tmp/platform-v4-files.txt
-          grep -q '^staff/index.html$' /tmp/platform-v4-files.txt
-          grep -q '^admin/index.html$' /tmp/platform-v4-files.txt
+          if [ "$valid" -eq 1 ]; then
+            : > /tmp/platform-v4.b64
+            for name in "${expected_names[@]}"; do cat ".deploy/platform-v4/${name}" >> /tmp/platform-v4.b64; done
+            joined_length="$(wc -c < /tmp/platform-v4.b64 | tr -d ' ')"
+            joined_hash="$(sha256sum /tmp/platform-v4.b64 | awk '{print $1}')"
+            echo "joined_base64 length=${joined_length} sha256=${joined_hash}" | tee -a "$diagnostics"
+            [ "$joined_length" -eq 142140 ] || valid=0
+          fi
+
+          if [ "$valid" -eq 1 ]; then
+            if base64 --decode /tmp/platform-v4.b64 > /tmp/platform-v4.tar.gz; then
+              archive_length="$(wc -c < /tmp/platform-v4.tar.gz | tr -d ' ')"
+              archive_hash="$(sha256sum /tmp/platform-v4.tar.gz | awk '{print $1}')"
+              echo "archive actual_length=${archive_length} expected_length=106603 actual_sha256=${archive_hash} expected_sha256=abd2e35e7ee921ecd765f54e673550bc7daec7b01fe31b7a50ae2f9b8327c355" | tee -a "$diagnostics"
+              [ "$archive_length" -eq 106603 ] || valid=0
+              [ "$archive_hash" = "abd2e35e7ee921ecd765f54e673550bc7daec7b01fe31b7a50ae2f9b8327c355" ] || valid=0
+            else
+              echo "archive base64_decode=FAILED" | tee -a "$diagnostics"
+              valid=0
+            fi
+          fi
+
+          if [ "$valid" -eq 1 ]; then
+            if tar -tzf /tmp/platform-v4.tar.gz > /tmp/platform-v4-files.txt; then
+              echo "archive tar_list=OK file_count=$(wc -l < /tmp/platform-v4-files.txt | tr -d ' ')" | tee -a "$diagnostics"
+              for required in index.html platform.js order/index.html staff/index.html admin/index.html; do
+                grep -q "^${required}$" /tmp/platform-v4-files.txt || { echo "archive missing_required=${required}" | tee -a "$diagnostics"; valid=0; }
+              done
+            else
+              echo "archive tar_list=FAILED" | tee -a "$diagnostics"
+              valid=0
+            fi
+          fi
+
+          echo "valid=${valid}" | tee -a "$diagnostics"
+          if [ "$valid" -eq 1 ]; then touch /tmp/platform-v4-valid; fi
+
+      - name: Upload reconstruction diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: southernmost-platform-v4-reconstruction-diagnostics
+          path: /tmp/platform-v4-diagnostics.txt
+          if-no-files-found: error
+          retention-days: 3
+
+      - name: Require valid platform archive
+        shell: bash
+        run: test -f /tmp/platform-v4-valid
 
       - name: Materialize platform source
         shell: bash
