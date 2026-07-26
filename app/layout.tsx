@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { GuestExperience } from "./components/guest-experience";
 import { SiteFooter, SiteHeader } from "./components/site-shell";
 import { OrderProvider } from "./components/order-provider";
 
@@ -58,6 +59,7 @@ export default function RootLayout({
           <SiteHeader />
           {children}
           <SiteFooter />
+          <GuestExperience />
         </OrderProvider>
       </body>
     </html>

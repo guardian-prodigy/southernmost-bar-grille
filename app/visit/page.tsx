@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { VisitExperience } from "../components/visit-experience";
 
 export const metadata: Metadata = {
   title: "Visit",
@@ -98,6 +99,8 @@ export default function VisitPage() {
           </article>
         </div>
       </section>
+
+      <VisitExperience />
 
       <section className="map-embed-section">
         <div className="shell map-embed-wrap">

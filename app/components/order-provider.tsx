@@ -7,6 +7,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import type { MenuItem } from "../menu-data";
@@ -29,6 +30,23 @@ type OrderContextValue = {
 const OrderContext = createContext<OrderContextValue | null>(null);
 const STORAGE_KEY = "southernmost-cart-v2";
 
+function isCartLine(value: unknown): value is CartLine {
+  if (!value || typeof value !== "object") return false;
+  const line = value as Partial<CartLine>;
+  return (
+    typeof line.id === "string" &&
+    typeof line.name === "string" &&
+    typeof line.price === "number" &&
+    Number.isFinite(line.price) &&
+    typeof line.quantity === "number" &&
+    Number.isInteger(line.quantity) &&
+    line.quantity > 0 &&
+    typeof line.image === "string" &&
+    typeof line.categoryId === "string" &&
+    typeof line.categoryName === "string"
+  );
+}
+
 export function useOrder() {
   const context = useContext(OrderContext);
   if (!context) {
@@ -41,12 +59,16 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
   const [cart, setCart] = useState<CartLine[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [ready, setReady] = useState(false);
+  const returnFocus = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
       try {
         const stored = window.localStorage.getItem(STORAGE_KEY);
-        if (stored) setCart(JSON.parse(stored) as CartLine[]);
+        if (stored) {
+          const parsed: unknown = JSON.parse(stored);
+          setCart(Array.isArray(parsed) ? parsed.filter(isCartLine) : []);
+        }
       } catch {
         window.localStorage.removeItem(STORAGE_KEY);
       } finally {
@@ -104,6 +126,17 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
+  const openCart = useCallback(() => {
+    returnFocus.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setCartOpen(true);
+  }, []);
+
+  const closeCart = useCallback(() => {
+    setCartOpen(false);
+    window.setTimeout(() => returnFocus.current?.focus(), 0);
+  }, []);
+
   const value = useMemo<OrderContextValue>(() => {
     const itemCount = cart.reduce((sum, line) => sum + line.quantity, 0);
     const subtotal = cart.reduce(
@@ -119,10 +152,18 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
       removeItem,
       decreaseItem,
       clearCart: () => setCart([]),
-      openCart: () => setCartOpen(true),
-      closeCart: () => setCartOpen(false),
+      openCart,
+      closeCart,
     };
-  }, [cart, cartOpen, addItem, removeItem, decreaseItem]);
+  }, [
+    cart,
+    cartOpen,
+    addItem,
+    removeItem,
+    decreaseItem,
+    openCart,
+    closeCart,
+  ]);
 
   return (
     <OrderContext.Provider value={value}>
@@ -144,6 +185,36 @@ function CartDrawer() {
     clearCart,
     closeCart,
   } = useOrder();
+  const closeButton = useRef<HTMLButtonElement | null>(null);
+  const dialog = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!cartOpen) return;
+    const timer = window.setTimeout(() => closeButton.current?.focus(), 0);
+    const trapFocus = (event: KeyboardEvent) => {
+      if (event.key !== "Tab" || !dialog.current) return;
+      const focusable = Array.from(
+        dialog.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input, textarea, select, [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((element) => !element.hasAttribute("aria-hidden"));
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener("keydown", trapFocus);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("keydown", trapFocus);
+    };
+  }, [cartOpen]);
 
   return (
     <div className={`cart-layer ${cartOpen ? "is-open" : ""}`} aria-hidden={!cartOpen}>
@@ -154,6 +225,7 @@ function CartDrawer() {
         onClick={closeCart}
       />
       <aside
+        ref={dialog}
         className="cart-drawer"
         role="dialog"
         aria-modal="true"
@@ -164,7 +236,12 @@ function CartDrawer() {
             <p className="eyebrow">Your order</p>
             <h2>{itemCount ? `${itemCount} item${itemCount === 1 ? "" : "s"}` : "Ready when you are"}</h2>
           </div>
-          <button type="button" onClick={closeCart} aria-label="Close order">
+          <button
+            ref={closeButton}
+            type="button"
+            onClick={closeCart}
+            aria-label="Close order"
+          >
             ×
           </button>
         </div>

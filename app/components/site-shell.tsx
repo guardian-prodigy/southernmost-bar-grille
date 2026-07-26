@@ -2,17 +2,40 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { useOrder } from "./order-provider";
+import { VenueStatus } from "./venue-status";
 
 export function SiteHeader() {
   const { itemCount, openCart } = useOrder();
   const pathname = usePathname();
+  const mobileMenu = useRef<HTMLDetailsElement | null>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if (mobileMenu.current) mobileMenu.current.open = false;
+      setMobileOpen(false);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      if (mobileMenu.current) mobileMenu.current.open = false;
+      setMobileOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [mobileOpen]);
 
   return (
     <>
       <div className="announcement">
         <div className="shell announcement-inner">
-          <span>Happy hour daily · 5–7 PM</span>
+          <VenueStatus compact />
           <span className="announcement-center">
             4449 Okeechobee Blvd · West Palm Beach
           </span>
@@ -57,8 +80,15 @@ export function SiteHeader() {
             <Link className="button nav-order" href="/order">
               Order online
             </Link>
-            <details className="mobile-menu">
-              <summary aria-label="Open navigation">
+            <details
+              ref={mobileMenu}
+              className="mobile-menu"
+              onToggle={(event) => setMobileOpen(event.currentTarget.open)}
+            >
+              <summary
+                aria-label={mobileOpen ? "Close navigation" : "Open navigation"}
+                aria-expanded={mobileOpen}
+              >
                 <span />
                 <span />
                 <span />

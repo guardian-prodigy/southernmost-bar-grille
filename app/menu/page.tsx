@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { MenuExplorer } from "../components/menu-explorer";
+import { menuCategories } from "../menu-data";
 
 export const metadata: Metadata = {
   title: "Menu",
@@ -9,8 +10,33 @@ export const metadata: Metadata = {
 };
 
 export default function MenuPage() {
+  const menuSchema = {
+    "@context": "https://schema.org",
+    "@type": "Menu",
+    name: "Southernmost Bar & Grille Menu",
+    hasMenuSection: menuCategories.map((category) => ({
+      "@type": "MenuSection",
+      name: category.name,
+      description: category.subtitle,
+      hasMenuItem: category.items.map((item) => ({
+        "@type": "MenuItem",
+        name: item.name,
+        description: item.description,
+        offers: {
+          "@type": "Offer",
+          price: item.price.toFixed(2),
+          priceCurrency: "USD",
+        },
+      })),
+    })),
+  };
+
   return (
     <main id="main-content">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(menuSchema) }}
+      />
       <section className="page-hero menu-page-hero">
         <div className="page-hero-image" aria-hidden="true" />
         <div className="menu-hero-sun" aria-hidden="true" />

@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { GalleryExperience } from "./components/gallery-experience";
+import { HomeExperience } from "./components/home-experience";
 
 const favorites = [
   {
@@ -172,6 +174,8 @@ export default function Home() {
         </div>
       </section>
 
+      <HomeExperience />
+
       <section className="section intro-section">
         <div className="shell intro-grid">
           <div className="intro-sticky">
@@ -265,6 +269,8 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <GalleryExperience />
 
       <section className="section experience-section">
         <div className="shell experience-grid">

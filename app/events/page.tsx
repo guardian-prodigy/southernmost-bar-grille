@@ -1,42 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { EventExplorer } from "../components/event-explorer";
 
 export const metadata: Metadata = {
   title: "Live Music & Events",
   description:
     "Live music, acoustic brunch, billiards and watch-party energy at Southernmost Bar & Grille.",
 };
-
-const weeklyLineup = [
-  {
-    label: "Friday",
-    title: "Live Music Fridays",
-    time: "Evening",
-    copy: "Local artists, cold drinks and an easygoing crowd to start the weekend right.",
-    accent: "LIVE",
-  },
-  {
-    label: "Saturday",
-    title: "Southernmost Saturdays",
-    time: "Late night",
-    copy: "Live entertainment, tropical cocktails and a room that stays energized until close.",
-    accent: "WEEKEND",
-  },
-  {
-    label: "Sunday",
-    title: "Acoustic Brunch",
-    time: "Brunch",
-    copy: "A laid-back acoustic set, island-inspired plates and a slower Sunday pace.",
-    accent: "ACOUSTIC",
-  },
-  {
-    label: "Nightly",
-    title: "Billiards Lounge",
-    time: "Open late",
-    copy: "Rack up a game with friends, join a casual matchup or make the tables your after-dinner plan.",
-    accent: "PLAY",
-  },
-];
 
 export default function EventsPage() {
   return (
@@ -86,22 +56,7 @@ export default function EventsPage() {
               when you are planning around a specific performance.
             </p>
           </div>
-          <div className="lineup-grid">
-            {weeklyLineup.map((event, index) => (
-              <article key={event.title}>
-                <div className="lineup-index">
-                  {String(index + 1).padStart(2, "0")}
-                </div>
-                <div className="lineup-label">
-                  <span>{event.accent}</span>
-                  <b>{event.label}</b>
-                </div>
-                <h3>{event.title}</h3>
-                <p>{event.copy}</p>
-                <small>{event.time}</small>
-              </article>
-            ))}
-          </div>
+          <EventExplorer />
         </div>
       </section>
 

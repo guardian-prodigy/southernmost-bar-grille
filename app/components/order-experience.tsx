@@ -26,6 +26,11 @@ export function OrderExperience() {
   const [mode, setMode] = useState<OrderMode>("pickup");
   const [tableSession, setTableSession] = useState<TableSession | null>(null);
   const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState(false);
+  const [requestedTime, setRequestedTime] = useState("ASAP");
+  const [guestName, setGuestName] = useState("");
+  const [guestPhone, setGuestPhone] = useState("");
+  const [specialInstructions, setSpecialInstructions] = useState("");
   const {
     cart,
     subtotal,
@@ -51,26 +56,82 @@ export function OrderExperience() {
         tableSession
           ? `Table ${tableSession.table} · ${tableSession.zone}`
           : null,
+        mode === "pickup" ? `Requested pickup: ${requestedTime}` : null,
+        guestName ? `Guest: ${guestName}` : null,
+        guestPhone ? `Phone: ${guestPhone}` : null,
         ...cart.map(
           (line) =>
             `${line.quantity} × ${line.name} — $${(
               line.quantity * line.price
             ).toFixed(2)}`,
         ),
+        specialInstructions
+          ? `Special instructions: ${specialInstructions}`
+          : null,
         `Estimated subtotal: $${subtotal.toFixed(2)}`,
+        "Please confirm timing, availability, tax and final pricing by phone.",
       ]
         .filter(Boolean)
         .join("\n"),
-    [cart, mode, subtotal, tableSession],
+    [
+      cart,
+      guestName,
+      guestPhone,
+      mode,
+      requestedTime,
+      specialInstructions,
+      subtotal,
+      tableSession,
+    ],
   );
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setCopied(false);
+      setCopyError(false);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [cart, guestName, guestPhone, mode, requestedTime, specialInstructions]);
+
   async function copyOrder() {
-    await navigator.clipboard.writeText(summary);
-    setCopied(true);
+    try {
+      await navigator.clipboard.writeText(summary);
+      setCopied(true);
+      setCopyError(false);
+    } catch {
+      setCopyError(true);
+    }
   }
+
+  const activeStep = !cart.length ? 1 : guestName && guestPhone ? 3 : 2;
+  const pickupItems = featuredMenuItems.filter((item) => !item.alcoholic);
 
   return (
     <section className="order-experience">
+      <div className="shell order-journey" aria-label="Order progress">
+        {[
+          [1, "Build", "Choose your favorites"],
+          [2, "Details", "Add a pickup request"],
+          [3, "Review", "Copy and call to confirm"],
+        ].map(([number, label, detail]) => (
+          <div
+            className={
+              activeStep === number
+                ? "active"
+                : activeStep > Number(number)
+                  ? "complete"
+                  : ""
+            }
+            key={number}
+          >
+            <span>{activeStep > Number(number) ? "✓" : `0${number}`}</span>
+            <p>
+              <strong>{label}</strong>
+              <small>{detail}</small>
+            </p>
+          </div>
+        ))}
+      </div>
       <div className="shell order-mode-bar">
         <div>
           <p className="eyebrow">How are you joining us?</p>
@@ -136,7 +197,7 @@ export function OrderExperience() {
               </Link>
             </div>
             <div className="quick-order-grid">
-              {featuredMenuItems.map((item) => (
+              {pickupItems.map((item) => (
                 <article key={item.id}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={item.image} alt="" />
@@ -150,6 +211,66 @@ export function OrderExperience() {
                 </article>
               ))}
             </div>
+
+            {mode === "pickup" && (
+              <section className="pickup-request" aria-labelledby="pickup-request-title">
+                <div className="pickup-request-head">
+                  <div>
+                    <p className="eyebrow">Pickup request</p>
+                    <h2 id="pickup-request-title">Add the details for the call.</h2>
+                  </div>
+                  <span>Nothing is transmitted</span>
+                </div>
+                <fieldset className="pickup-time-picker">
+                  <legend>Requested timing</legend>
+                  <div>
+                    {["ASAP", "In 30 minutes", "In 45 minutes", "In 60 minutes"].map(
+                      (time) => (
+                        <button
+                          className={requestedTime === time ? "active" : ""}
+                          type="button"
+                          key={time}
+                          onClick={() => setRequestedTime(time)}
+                        >
+                          {time}
+                        </button>
+                      ),
+                    )}
+                  </div>
+                  <small>Requested times are confirmed by the restaurant.</small>
+                </fieldset>
+                <div className="pickup-fields">
+                  <label>
+                    Name for the order
+                    <input
+                      value={guestName}
+                      onChange={(event) => setGuestName(event.target.value)}
+                      placeholder="Your name"
+                      autoComplete="name"
+                    />
+                  </label>
+                  <label>
+                    Best phone
+                    <input
+                      type="tel"
+                      value={guestPhone}
+                      onChange={(event) => setGuestPhone(event.target.value)}
+                      placeholder="(555) 555-5555"
+                      autoComplete="tel"
+                    />
+                  </label>
+                  <label className="pickup-notes">
+                    Special instructions
+                    <textarea
+                      rows={4}
+                      value={specialInstructions}
+                      onChange={(event) => setSpecialInstructions(event.target.value)}
+                      placeholder="Food preparation requests or anything the team should confirm…"
+                    />
+                  </label>
+                </div>
+              </section>
+            )}
           </div>
 
           <aside className="order-review">
@@ -225,6 +346,12 @@ export function OrderExperience() {
               >
                 {copied ? "Order summary copied" : "Copy order summary"}
               </button>
+              {copyError && (
+                <p className="order-copy-error" role="alert">
+                  Copy was blocked by the browser. Keep this page open and call
+                  the team to confirm the order.
+                </p>
+              )}
               <a
                 className={`button glass ${cart.length ? "" : "disabled"}`}
                 href={cart.length ? "tel:+17279106118" : undefined}
