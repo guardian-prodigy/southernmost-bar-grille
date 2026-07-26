@@ -146,8 +146,12 @@ export function MenuExplorer() {
       <div className="shell">
         <div className="menu-view-intro">
           <div>
-            <p className="eyebrow">The Southernmost menu book</p>
-            <h2>Turn the pages. Find your favorite.</h2>
+            <p className="menu-v2-kicker">Choose how you browse</p>
+            <h2>A menu designed for the table.</h2>
+            <p className="menu-v2-intro-copy">
+              Browse the dining-room folio or switch to the searchable list
+              when you already know what you want.
+            </p>
           </div>
           <div className="menu-view-toggle" aria-label="Choose menu view">
             <button
@@ -158,7 +162,7 @@ export function MenuExplorer() {
                 setSearch("");
               }}
             >
-              <span aria-hidden="true">◫</span> 3D book
+              Menu folio
             </button>
             <button
               className={view === "list" ? "active" : ""}
@@ -168,7 +172,7 @@ export function MenuExplorer() {
                 if (category === "saved") setCategory("all");
               }}
             >
-              <span aria-hidden="true">☰</span> Quick list
+              Searchable list
             </button>
             <button
               className={view === "list" && category === "saved" ? "active" : ""}
@@ -179,7 +183,7 @@ export function MenuExplorer() {
                 setSearch("");
               }}
             >
-              <span aria-hidden="true">♥</span> Saved
+              Saved
               {favorites.length > 0 && <b>{favorites.length}</b>}
             </button>
           </div>
@@ -187,8 +191,9 @@ export function MenuExplorer() {
 
         {view === "book" && (
           <div
-            className="menu-book-stage"
+            className="menu-folio-stage"
             tabIndex={0}
+            aria-label={`${currentPage.name} menu folio. Use left and right arrow keys to change chapters.`}
             onTouchStart={(event) => {
               touchStart.current = event.touches[0]?.clientX ?? null;
             }}
@@ -200,63 +205,76 @@ export function MenuExplorer() {
               goToPage(start > end ? pageIndex + 1 : pageIndex - 1);
             }}
           >
-            <div className="book-ambient book-ambient-one" aria-hidden="true" />
-            <div className="book-ambient book-ambient-two" aria-hidden="true" />
-            <div className="stage-palm stage-palm-left" aria-hidden="true" />
-            <div className="stage-palm stage-palm-right" aria-hidden="true" />
-            <p className="stage-coordinates" aria-hidden="true">
-              26.7153° N · 80.0534° W
-            </p>
+            <nav className="menu-folio-chapters" aria-label="Menu chapters">
+              {menuCategories.map((group, index) => (
+                <button
+                  className={index === pageIndex ? "active" : ""}
+                  type="button"
+                  key={group.id}
+                  onClick={() => goToPage(index)}
+                  aria-current={index === pageIndex ? "page" : undefined}
+                >
+                  {group.name}
+                </button>
+              ))}
+            </nav>
             <div
-              className={`menu-book turn-${turn.direction}`}
+              className={`menu-folio folio-turn-${turn.direction}`}
               key={turn.key}
-              aria-label={`${currentPage.name} menu page`}
+              aria-label={`${currentPage.name} menu chapter`}
             >
-              <div className="book-cover-edge" aria-hidden="true" />
-              <section className="book-page book-page-left">
-                <div className="book-page-texture" aria-hidden="true" />
-                <span className="book-page-palm" aria-hidden="true">✦</span>
-                <span className="book-kicker">
+              <div className="menu-folio-cover" aria-hidden="true" />
+              <section className="menu-folio-page menu-folio-page-intro">
+                <div className="menu-folio-page-number">
                   Chapter {String(pageIndex + 1).padStart(2, "0")}
-                </span>
-                <h3>{currentPage.name}</h3>
-                <p>{currentPage.subtitle}</p>
-                <div className="book-photo">
+                </div>
+                <div className="menu-folio-photo">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={currentPage.image} alt="" />
-                  <span>Southernmost<br />Bar &amp; Grille</span>
+                  <span className="menu-folio-photo-shade" aria-hidden="true" />
+                  <p>Southernmost</p>
                 </div>
-                <small>West Palm Beach · Florida</small>
+                <div className="menu-folio-chapter-copy">
+                  <span>Coastal · Caribbean · American</span>
+                  <h3>{currentPage.name}</h3>
+                  <p>{currentPage.subtitle}</p>
+                </div>
+                <small className="menu-folio-location">
+                  West Palm Beach · Florida
+                </small>
               </section>
-              <section className="book-page book-page-right">
-                <div className="book-page-texture" aria-hidden="true" />
-                <div className="book-page-rule">
-                  <span>Southernmost · {currentPage.name}</span>
-                  <span>{pageIndex + 1} / {menuCategories.length}</span>
+              <section className="menu-folio-page menu-folio-page-items">
+                <div className="menu-folio-page-header">
+                  <div>
+                    <span>Southernmost Bar &amp; Grille</span>
+                    <h3>{currentPage.name}</h3>
+                  </div>
+                  <span>
+                    {String(pageIndex + 1).padStart(2, "0")} /{" "}
+                    {String(menuCategories.length).padStart(2, "0")}
+                  </span>
                 </div>
-                <div className="book-page-heading">
-                  <small>Coastal · Caribbean · American</small>
-                  <strong>{currentPage.name}</strong>
-                </div>
-                <div className="book-items">
+                <div className="menu-folio-items">
                   {currentPage.items.map((item) => (
-                    <article className="book-item" key={item.id}>
-                      <div>
-                        <h4>{item.name}</h4>
-                        {item.badge && <span>{item.badge}</span>}
-                      </div>
-                      <strong>${item.price.toFixed(2)}</strong>
-                      <p>{item.description}</p>
-                      <div className="book-item-actions">
+                    <article className="menu-folio-item" key={item.id}>
+                      <button
+                        className="menu-folio-item-copy"
+                        type="button"
+                        onClick={() => setDetailItem(item)}
+                        aria-label={`View details for ${item.name}`}
+                      >
+                        <span>
+                          <strong>{item.name}</strong>
+                          {item.badge && <small>{item.badge}</small>}
+                        </span>
+                        <p>{item.description}</p>
+                      </button>
+                      <div className="menu-folio-item-actions">
+                        <strong>${item.price.toFixed(2)}</strong>
                         <button
-                          className="book-detail-button"
-                          type="button"
-                          onClick={() => setDetailItem(item)}
-                        >
-                          Details
-                        </button>
-                        <button
-                          className={favorites.includes(item.id) ? "is-saved" : ""}
+                          className={`menu-folio-save ${
+                            favorites.includes(item.id) ? "is-saved" : ""
+                          }`}
                           type="button"
                           aria-label={
                             favorites.includes(item.id)
@@ -265,9 +283,12 @@ export function MenuExplorer() {
                           }
                           onClick={() => toggleFavorite(item)}
                         >
-                          <span aria-hidden="true">♥</span>
+                          <span aria-hidden="true">
+                            {favorites.includes(item.id) ? "♥" : "♡"}
+                          </span>
                         </button>
                         <button
+                          className="menu-folio-add"
                           type="button"
                           aria-label={
                             item.alcoholic
@@ -276,49 +297,43 @@ export function MenuExplorer() {
                           }
                           onClick={() => addFromMenu(item)}
                         >
-                          {item.alcoholic ? "Dine-in" : "Add"}{" "}
-                          <span aria-hidden="true">{item.alcoholic ? "21+" : "+"}</span>
+                          {item.alcoholic ? "Dine-in · 21+" : "Add"}
                         </button>
                       </div>
                     </article>
                   ))}
                 </div>
-                <span className="book-corner-mark" aria-hidden="true">SM</span>
+                <p className="menu-folio-page-footer">
+                  Tap a dish for details · Please tell us about allergies
+                </p>
               </section>
-              <div className="book-spine" aria-hidden="true" />
+              <div className="menu-folio-spine" aria-hidden="true" />
             </div>
 
-            <div className="book-controls">
+            <div className="menu-folio-controls">
               <button
                 type="button"
                 disabled={pageIndex === 0}
                 onClick={() => goToPage(pageIndex - 1)}
               >
-                <span aria-hidden="true">←</span> Previous
+                <span aria-hidden="true">←</span>
+                Previous chapter
               </button>
-              <div className="book-progress" aria-label={`Page ${pageIndex + 1} of ${menuCategories.length}`}>
-                {menuCategories.map((group, index) => (
-                  <button
-                    className={index === pageIndex ? "active" : ""}
-                    type="button"
-                    key={group.id}
-                    onClick={() => goToPage(index)}
-                    aria-label={`Open ${group.name}`}
-                  />
-                ))}
-              </div>
+              <p aria-live="polite">
+                <strong>{currentPage.name}</strong>
+                <span>
+                  Chapter {pageIndex + 1} of {menuCategories.length}
+                </span>
+              </p>
               <button
                 type="button"
                 disabled={pageIndex === menuCategories.length - 1}
                 onClick={() => goToPage(pageIndex + 1)}
               >
-                Next <span aria-hidden="true">→</span>
+                Next chapter
+                <span aria-hidden="true">→</span>
               </button>
             </div>
-            <p className="book-hint">
-              Turn with the arrows, keyboard keys or a swipe. The page scrolls
-              when a chapter has more dishes.
-            </p>
           </div>
         )}
 
