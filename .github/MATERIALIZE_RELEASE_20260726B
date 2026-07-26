@@ -1,3 +1,3 @@
 Release: 20260726b
 Archive SHA-256: 3d4b22a89b9a67791dc9f5bb98c718a1b29ed52bd7987a36d291a94db37c7980
-Retry: checksum-corrected part 01 and part 03 segments
+Retry: reconstruct directly from the checked-out staged branch
