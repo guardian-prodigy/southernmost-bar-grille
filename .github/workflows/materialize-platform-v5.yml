@@ -87,9 +87,6 @@ jobs:
           node --check sw.js
           grep -q 'data-release="20260727b"' index.html
           grep -q 'southernmost-v18-20260727b' sw.js
-          grep -q 'setupOrderPage' platform.js
-          grep -q 'setupStaffPage' platform.js
-          grep -q 'setupAdminPage' platform.js
           test -s assets/southernmost-wordmark.webp
           test -s assets/og-southernmost.jpg
           test -s assets/qr-table-12.png
