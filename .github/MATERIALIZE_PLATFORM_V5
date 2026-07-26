@@ -1,2 +1,3 @@
 Release: 20260727b
 Package SHA-256: 1bab3471584af6c2f1b295347ddc60b713a98770de126be678c47e1361631979
+Retry: validator corrected to use the platform check suite as source of truth.
