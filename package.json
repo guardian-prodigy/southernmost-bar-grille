@@ -1,10 +1,6 @@
 {
-  "name": "southernmost-bar-grille",
-  "version": "1.0.0",
+  "name": "southernmost-platform",
+  "version": "5.0.0",
   "private": true,
-  "type": "module",
-  "scripts": {
-    "serve": "python -m http.server 4173",
-    "check": "node scripts/validate.mjs"
-  }
+  "scripts": { "check": "node scripts/validate.mjs" }
 }

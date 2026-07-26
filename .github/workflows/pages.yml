@@ -1,4 +1,4 @@
-name: Deploy Southernmost
+name: Deploy Southernmost Platform
 
 on:
   push:
@@ -24,21 +24,26 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - name: Validate complete website
+      - name: Validate production platform
         shell: bash
         run: |
           set -euo pipefail
           npm run check
-          test -s assets/og-southernmost.jpg
+          node --check platform-store.js
+          node --check platform.js
+          node --check three-scenes-pro.js
+          node --check data.js
+          node --check sw.js
           test -s assets/southernmost-wordmark.webp
-          test -s three-scenes-v2.js
-          test -s upgrade.css
-          test -s upgrade.js
-          grep -q "southernmost-bar-grille" robots.txt
-          grep -q "southernmost-bar-grille" sitemap.xml
-          ! grep -Rqi "guardian-prodigy.github.io/developers" robots.txt sitemap.xml index.html
-          ! grep -Rqi "atob(" index.html app.js upgrade.js three-scenes-v2.js
-          ! grep -Eqi '>[^<]*(demo|demonstration)[^<]*<' index.html
+          test -s assets/og-southernmost.jpg
+          test -s assets/qr-table-12.png
+          test -s order/index.html
+          test -s staff/index.html
+          test -s admin/index.html
+          grep -q 'data-release="20260727b"' index.html
+          grep -q 'southernmost-v18-20260727b' sw.js
+          ! grep -Rqi 'atob(' index.html platform-store.js platform.js three-scenes-pro.js
+          ! grep -RqiE '>[^<]*(demo|demonstration)[^<]*<' index.html menu/index.html order/index.html events/index.html private-events/index.html visit/index.html loyalty/index.html staff/index.html admin/index.html
 
   deploy:
     if: github.event_name != 'pull_request'

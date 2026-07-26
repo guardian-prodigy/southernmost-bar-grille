@@ -1,13 +1,11 @@
-const CACHE = "southernmost-v16-20260726b";
+const CACHE = "southernmost-v18-20260727b";
 const CORE = [
-  "./", "./index.html", "./styles.css", "./upgrade.css", "./data.js", "./app.js", "./upgrade.js", "./three-scenes-v2.js",
-  "./404.html", "./terms.html", "./privacy.html", "./accessibility.html", "./manifest.webmanifest",
+  "./", "./index.html", "./platform.css", "./data.js", "./platform-store.js", "./platform.js", "./three-scenes-pro.js", "./manifest.webmanifest",
+  "./menu/", "./order/", "./order/order-responsive.css", "./order/order-interaction.css", "./order/order-controller.js", "./events/", "./private-events/", "./visit/", "./loyalty/", "./staff/", "./staff/staff-enhancement.js", "./admin/", "./admin/qr-kit.html",
+  "./qr/table-12.html", "./qr/patio-07.html", "./qr/bar-03.html", "./qr/lounge-04.html",
   "./legal/terms.html", "./legal/privacy.html", "./legal/allergens.html", "./legal/refunds.html", "./legal/accessibility.html",
-  "./admin/qr-kit.html", "./qr/table-12.html", "./qr/patio-07.html", "./qr/bar-03.html", "./qr/lounge-04.html",
-  "./assets/hero.webp", "./assets/interior.webp", "./assets/lamb.webp", "./assets/wings.webp", "./assets/burger.webp",
-  "./assets/mahi.webp", "./assets/seafood.webp", "./assets/tacos.webp", "./assets/cocktails.webp", "./assets/key-lime.webp", "./assets/music.webp",
-  "./assets/southernmost-logo-plate.webp", "./assets/southernmost-mark-plate.webp", "./assets/southernmost-wordmark.webp", "./assets/southernmost-badge.webp",
-  "./assets/menu-board-complete.jpg", "./assets/menu-board-signature.jpg", "./assets/og-southernmost.jpg",
+  "./assets/hero.webp", "./assets/interior.webp", "./assets/lamb.webp", "./assets/wings.webp", "./assets/burger.webp", "./assets/mahi.webp", "./assets/seafood.webp", "./assets/tacos.webp", "./assets/cocktails.webp", "./assets/key-lime.webp", "./assets/music.webp",
+  "./assets/southernmost-wordmark.webp", "./assets/southernmost-badge.webp", "./assets/og-southernmost.jpg", "./assets/menu-board-complete.jpg", "./assets/menu-board-signature.jpg",
   "./assets/qr-table-12.png", "./assets/qr-patio-07.png", "./assets/qr-bar-03.png", "./assets/qr-lounge-04.png"
 ];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting())));
@@ -19,7 +17,10 @@ async function networkFirst(request) {
     if (response.ok) cache.put(request, response.clone());
     return response;
   } catch {
-    return (await cache.match(request, { ignoreSearch: true })) || (request.mode === "navigate" ? cache.match("./index.html") : Response.error());
+    const cached = await cache.match(request, { ignoreSearch: true });
+    if (cached) return cached;
+    if (request.mode === "navigate") return cache.match("./index.html");
+    return Response.error();
   }
 }
 async function cacheFirst(request) {

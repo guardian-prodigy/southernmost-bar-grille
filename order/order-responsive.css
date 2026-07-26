@@ -1,0 +1,65 @@
+/* Order-route containment and touch targeting — release 20260727b */
+body[data-page="order"] #active-order,
+body[data-page="order"] .order-layout,
+body[data-page="order"] .order-layout > div,
+body[data-page="order"] .order-side,
+body[data-page="order"] #order-menu,
+body[data-page="order"] #menu-filters,
+body[data-page="order"] .toolbar,
+body[data-page="order"] .search {
+  min-width: 0;
+  max-width: 100%;
+}
+
+body[data-page="order"] #menu-filters {
+  width: 100%;
+  contain: inline-size;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+body[data-page="order"] .menu-card {
+  min-width: 0;
+  scroll-margin-top: calc(var(--header) + 18px);
+}
+
+body[data-page="order"] .menu-actions,
+body[data-page="order"] .menu-actions .icon-button {
+  position: relative;
+  z-index: 2;
+}
+
+@media (max-width: 900px) {
+  body[data-page="order"] .order-layout {
+    display: block;
+    width: 100%;
+  }
+
+  body[data-page="order"] .order-layout > div,
+  body[data-page="order"] .order-side {
+    width: 100%;
+  }
+
+  body[data-page="order"] #order-menu.menu-grid {
+    width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  body[data-page="order"] #order-menu.menu-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  body[data-page="order"] .menu-card,
+  body[data-page="order"] .menu-body,
+  body[data-page="order"] .menu-foot {
+    width: 100%;
+    min-width: 0;
+  }
+
+  body[data-page="order"] .menu-actions .icon-button {
+    width: 48px;
+    height: 48px;
+  }
+}

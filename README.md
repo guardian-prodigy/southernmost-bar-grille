@@ -1,33 +1,37 @@
-# Southernmost Bar & Grille — Client Website
+# Southernmost Bar & Grille Platform
 
-A production-oriented interactive website for Southernmost Bar & Grille in West Palm Beach, Florida.
+A multi-experience restaurant platform for Southernmost Bar & Grille in West Palm Beach.
 
-## Included
+## Guest experiences
 
-- Immersive Three.js hero, cocktail and billiards scenes
-- CSS 3D page-turning menu book
-- Searchable menu generated from the supplied menu artwork
-- Public read-only menu and table-QR ordering unlock
-- Persistent guest tab with phone verification, server assignment, order rounds, tipping and closeout flows
-- Uber Eats delivery handoff
-- Reservations, billiards bookings, event inquiries and event calendar
-- Terms of Service, Privacy Policy and Accessibility statement
-- PWA manifest, service worker, metadata, structured data, sitemap and QR landing pages
-- Responsive mobile, tablet and desktop layouts
+- Adaptive homepage with a time-aware “Tonight at Southernmost” module
+- Customer-mode routing for dine-in, pickup, delivery and public browsing
+- Full 57-item searchable menu with prices, availability, modifiers, dietary tags, budget filters and pairings
+- Optional desktop and touch-friendly illustrated menu book
+- Location-aware QR ordering routes for dining, patio, bar and billiards
+- Guest verification, tab authorization, group members, order ownership, repeat rounds and running balances
+- Service requests, preparation states and split-payment interface
+- No-key, on-device Island Guide
+- Events, watch parties and billiards waitlist
+- Reservations and private-event inquiries
+- Southernmost Passport and gift-card experience
+- Progressive Three.js hero, cocktail bar and playable billiards scenes
+- Responsive PWA and offline read-only shell
 
-## Run locally
+## Operations experiences
 
-```bash
-python -m http.server 4173
-```
+- Floor and open-tab view
+- Kitchen display
+- Bar display
+- Service-request queue
+- Manager dashboard and operational switches
+- Menu availability and stock controls
+- Event calendar, reservation and private-event lead queues
+- QR route management
 
-Open:
+## Production boundary
 
-- Public site: `http://localhost:4173/`
-- Table 12 ordering: `http://localhost:4173/qr/table-12.html`
-- Bar seat 03: `http://localhost:4173/qr/bar-03.html`
-
-Table access code format: `SM-LOCAL-{table}`. Mobile verification code: `2468`.
+The GitHub Pages deployment is a browser-side operational presentation. Real payment authorization, SMS verification, POS routing, inventory, staff authentication, receipts and accounting require the providers and secure backend described in `docs/PRODUCTION_BACKEND.md`.
 
 ## Validation
 
@@ -35,10 +39,4 @@ Table access code format: `SM-LOCAL-{table}`. Mobile verification code: `2468`.
 npm run check
 ```
 
-## Production boundaries
-
-The front-end flows are complete for client review. Real SMS, payments, point-of-sale routing, inventory, waiter assignment, receipts, email and delivery-provider integrations require the backend contracts described in `docs/PRODUCTION_BACKEND.md`.
-
-## AJL WebCraft
-
-Designed and engineered by [AJL WebCraft](https://ajlwebcraft.com).
+Designed by [AJL WebCraft](https://ajlwebcraft.com).
