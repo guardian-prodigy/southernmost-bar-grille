@@ -5,13 +5,17 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/materialize-platform-v5.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/MATERIALIZE_PLATFORM_V5"
   workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: southernmost-platform-v5-materialize
+  group: southernmost-platform-v5-materialize-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -66,7 +70,7 @@ jobs:
           test -s staff/index.html
           test -s admin/index.html
 
-      - name: Validate complete platform
+      - name: Prepare Node
         uses: actions/setup-node@v4
         with:
           node-version: 24
