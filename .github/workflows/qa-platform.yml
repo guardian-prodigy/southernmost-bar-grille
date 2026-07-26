@@ -1,0 +1,289 @@
+name: QA Southernmost Platform
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: southernmost-platform-qa-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  browser-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Validate source
+        run: npm run check
+      - name: Install Playwright driver
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --ignore-scripts playwright-core@1.55.0
+          chrome="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          test -n "$chrome"
+          echo "CHROME_PATH=$chrome" >> "$GITHUB_ENV"
+          "$chrome" --version
+      - name: Start local production server
+        shell: bash
+        run: |
+          set -euo pipefail
+          nohup python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/southernmost-server.log 2>&1 &
+          echo $! > /tmp/southernmost-server.pid
+          for attempt in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:4173/ >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/southernmost-server.log
+          exit 1
+      - name: Run desktop, mobile and ordering journey tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/southernmost-platform-qa
+          cat > /tmp/southernmost-platform-qa/verify.mjs <<'NODE'
+          import { chromium } from "playwright-core";
+          import fs from "node:fs";
+
+          const base = "http://127.0.0.1:4173";
+          const release = "20260727b";
+          const failures = [];
+          const report = {};
+          const expect = (value, message) => { if (!value) failures.push(message); };
+
+          const browser = await chromium.launch({
+            executablePath: process.env.CHROME_PATH,
+            headless: true,
+            args: ["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"]
+          });
+
+          async function newPage(context, path) {
+            const page = await context.newPage();
+            const errors = [];
+            page.on("pageerror", error => errors.push(`pageerror: ${error.message}`));
+            page.on("response", response => {
+              const url = response.url();
+              if (url.startsWith(base) && response.status() >= 400) errors.push(`HTTP ${response.status()}: ${url}`);
+            });
+            await page.goto(`${base}${path}`, { waitUntil: "domcontentloaded", timeout: 120000 });
+            await page.waitForSelector(`body[data-release="${release}"]`, { timeout: 30000 });
+            await page.waitForTimeout(1200);
+            return { page, errors };
+          }
+
+          const desktopContext = await browser.newContext({ viewport: { width: 1440, height: 1000 }, serviceWorkers: "allow" });
+          const publicRoutes = ["/", "/menu/", "/events/", "/private-events/", "/visit/", "/loyalty/"];
+          report.routes = {};
+          for (const route of publicRoutes) {
+            const { page, errors } = await newPage(desktopContext, route);
+            const state = await page.evaluate(() => ({
+              page: document.body.dataset.page,
+              release: document.body.dataset.release,
+              rootHeight: document.querySelector("#page-root")?.getBoundingClientRect().height || 0,
+              overflow: document.documentElement.scrollWidth - innerWidth,
+              title: document.title,
+              mainText: document.querySelector("#page-root")?.textContent?.trim().slice(0, 140) || ""
+            }));
+            report.routes[route] = { state, errors };
+            expect(state.release === release, `${route}: release mismatch`);
+            expect(state.rootHeight > 300, `${route}: page did not render`);
+            expect(state.overflow <= 1, `${route}: ${state.overflow}px horizontal overflow`);
+            expect(state.title.includes("Southernmost"), `${route}: missing title`);
+            expect(errors.length === 0, `${route}: ${errors.join(" | ")}`);
+            await page.close();
+          }
+
+          {
+            const { page, errors } = await newPage(desktopContext, "/");
+            const state = await page.evaluate(() => ({
+              tonightRows: document.querySelectorAll(".tonight-row").length,
+              modes: document.querySelectorAll("[data-home-mode]").length,
+              canvases: document.querySelectorAll("canvas").length,
+              experiences: document.querySelectorAll(".experience").length,
+              guideClosed: document.querySelector("#guide-drawer")?.getAttribute("aria-hidden"),
+              cartClosed: document.querySelector("#cart-drawer")?.getAttribute("aria-hidden"),
+              bodyLocked: document.body.classList.contains("no-scroll")
+            }));
+            report.home = { state, errors };
+            expect(state.tonightRows >= 4, "Home: Tonight module incomplete");
+            expect(state.modes === 4, "Home: customer-mode selector incomplete");
+            expect(state.canvases >= 3, "Home: immersive canvases missing");
+            expect(state.experiences >= 3, "Home: experience cards missing");
+            expect(state.guideClosed === "true" && state.cartClosed === "true" && !state.bodyLocked, "Home: transient layer stuck open");
+            await page.locator("[data-open-guide]").first().click();
+            await page.waitForTimeout(250);
+            expect(await page.locator("#guide-drawer").evaluate(el => el.classList.contains("open")), "Home: Guide did not open");
+            expect(await page.locator("body").evaluate(el => el.classList.contains("no-scroll")), "Home: Guide did not lock background");
+            await page.locator("#guide-drawer [data-close-drawers]").click();
+            await page.waitForTimeout(320);
+            expect(!(await page.locator("body").evaluate(el => el.classList.contains("no-scroll"))), "Home: Guide left scrolling locked");
+            await page.locator("[data-open-cart]").first().click();
+            await page.waitForTimeout(250);
+            expect(await page.locator("#cart-drawer").evaluate(el => el.classList.contains("open")), "Home: cart did not open");
+            await page.locator("#cart-drawer [data-close-drawers]").click();
+            await page.waitForTimeout(320);
+            expect(!(await page.locator("body").evaluate(el => el.classList.contains("no-scroll"))), "Home: cart left scrolling locked");
+            await page.screenshot({ path: "/tmp/southernmost-platform-qa/desktop-home.png", fullPage: false });
+            await page.close();
+          }
+
+          {
+            const { page, errors } = await newPage(desktopContext, "/menu/");
+            const state = await page.evaluate(() => ({
+              cards: document.querySelectorAll(".menu-card").length,
+              filters: document.querySelectorAll("#menu-filters .filter").length,
+              book: Boolean(document.querySelector("#menu-book")),
+              imageCards: [...document.querySelectorAll(".menu-card img")].filter(img => img.getAttribute("src")).length
+            }));
+            report.menu = { state, errors };
+            expect(state.cards >= 50, `Menu: only ${state.cards} items rendered`);
+            expect(state.filters >= 10, `Menu: only ${state.filters} filters rendered`);
+            expect(state.book && state.imageCards >= 50, "Menu: book or imagery incomplete");
+            await page.locator("#menu-search").fill("mahi");
+            await page.waitForTimeout(150);
+            const visible = await page.locator(".menu-card:not([hidden])").count();
+            expect(visible >= 1 && visible < state.cards, `Menu: search did not filter (${visible})`);
+            await page.locator("[data-book-next]").click();
+            await page.waitForTimeout(750);
+            const turned = await page.locator(".sheet.turned").count();
+            expect(turned >= 1, "Menu: page-turn control did not advance");
+            await page.close();
+          }
+
+          {
+            const context = await browser.newContext({ viewport: { width: 412, height: 915 }, isMobile: true, hasTouch: true, deviceScaleFactor: 1, serviceWorkers: "allow" });
+            const { page, errors } = await newPage(context, "/menu/");
+            const initial = await page.evaluate(() => {
+              const dock = document.querySelector(".mobile-dock");
+              const rect = dock.getBoundingClientRect();
+              return {
+                overflow: document.documentElement.scrollWidth - innerWidth,
+                dockDisplay: getComputedStyle(dock).display,
+                dockPosition: getComputedStyle(dock).position,
+                dockVisible: rect.width > 0 && rect.height > 0 && rect.bottom > 0 && rect.top < innerHeight,
+                mobileBookDisplay: getComputedStyle(document.querySelector(".mobile-book")).display,
+                desktopBookDisplay: getComputedStyle(document.querySelector(".book")).display,
+                filtersHeight: document.querySelector("#menu-filters .filter")?.getBoundingClientRect().height || 0
+              };
+            });
+            report.mobile = { initial, errors };
+            expect(initial.overflow <= 1, `Mobile: ${initial.overflow}px horizontal overflow`);
+            expect(initial.dockDisplay !== "none" && initial.dockPosition === "fixed" && initial.dockVisible, "Mobile: dock is not stably fixed");
+            expect(initial.mobileBookDisplay !== "none" && initial.desktopBookDisplay === "none", "Mobile: wrong menu-book implementation visible");
+            expect(initial.filtersHeight >= 36, "Mobile: filters too small");
+            await page.evaluate(() => scrollTo(0, Math.min(2200, document.body.scrollHeight - innerHeight)));
+            await page.waitForTimeout(350);
+            const dockAfter = await page.locator(".mobile-dock").evaluate(el => { const rect = el.getBoundingClientRect(); return { position: getComputedStyle(el).position, visible: rect.bottom > 0 && rect.top < innerHeight }; });
+            expect(dockAfter.position === "fixed" && dockAfter.visible, "Mobile: dock disappeared after scroll");
+            const before = await page.locator(".mobile-book h3").textContent();
+            await page.locator("[data-book-next]").click();
+            await page.waitForTimeout(750);
+            const after = await page.locator(".mobile-book h3").textContent();
+            expect(before !== after, `Mobile: book did not advance (${before} -> ${after})`);
+            await page.screenshot({ path: "/tmp/southernmost-platform-qa/mobile-menu.png", fullPage: false });
+            await context.close();
+          }
+
+          {
+            const context = await browser.newContext({ viewport: { width: 412, height: 915 }, isMobile: true, hasTouch: true, serviceWorkers: "allow" });
+            await context.clearCookies();
+            const { page, errors } = await newPage(context, "/order/?table=12&zone=dining&token=SM-DINING-12");
+            await page.evaluate(() => localStorage.clear());
+            await page.reload({ waitUntil: "domcontentloaded" });
+            await page.waitForSelector("#verify-form", { timeout: 20000 });
+            await page.locator("#verify-form input[name=firstName]").fill("Alex");
+            await page.locator("#verify-form input[name=phone]").fill("5615550188");
+            await page.locator("#verify-form input[name=ageConfirmed]").check();
+            await page.locator("#verify-form").evaluate(form => form.requestSubmit());
+            await page.waitForSelector("[data-authorize=digital]");
+            await page.locator("[data-authorize=digital]").click();
+            await page.waitForSelector(".order-layout");
+            const active = await page.evaluate(() => ({
+              context: document.querySelector("#order-context-pill")?.textContent || "",
+              cards: document.querySelectorAll(".menu-card").length,
+              members: document.querySelectorAll("[data-member]").length,
+              services: document.querySelectorAll("[data-service]").length
+            }));
+            report.order = { active, errors };
+            expect(/dining/i.test(active.context) && /12/.test(active.context), `Order: QR context lost (${active.context})`);
+            expect(active.cards >= 50 && active.members >= 1 && active.services >= 4, `Order: active session incomplete ${JSON.stringify(active)}`);
+            await page.locator("[data-item]").first().click();
+            await page.waitForSelector("#item-form");
+            await page.locator("#item-form").evaluate(form => form.requestSubmit());
+            await page.waitForTimeout(300);
+            expect(await page.locator("[data-cart-count]").first().textContent() === "1", "Order: item was not added");
+            await page.locator("[data-submit-round]").click();
+            await page.waitForTimeout(350);
+            expect(await page.locator(".round").count() >= 1, "Order: round was not submitted");
+            await page.locator("[data-service]").first().click();
+            await page.waitForTimeout(250);
+            expect(await page.locator(".request").count() >= 1 || (await page.textContent("body")).includes("requested"), "Order: service request was not recorded");
+            await page.locator("[data-open-checkout]").click();
+            await page.waitForTimeout(250);
+            expect(await page.locator("#modal").evaluate(el => el.classList.contains("open")), "Order: split checkout did not open");
+            await page.screenshot({ path: "/tmp/southernmost-platform-qa/mobile-order.png", fullPage: false });
+            await context.close();
+          }
+
+          {
+            const { page: staff, errors: staffErrors } = await newPage(desktopContext, "/staff/");
+            const staffState = await staff.evaluate(() => ({ views: document.querySelectorAll("[data-staff-view]").length, tables: document.querySelectorAll(".table-tile").length, cards: document.querySelectorAll(".dash-card").length }));
+            report.staff = { staffState, staffErrors };
+            expect(staffState.views >= 5 && staffState.tables >= 4 && staffState.cards >= 2, `Staff dashboard incomplete ${JSON.stringify(staffState)}`);
+            await staff.locator("[data-staff-view=kitchen]").click();
+            await staff.waitForTimeout(150);
+            expect(await staff.locator(".ticket").count() >= 1, "Staff: kitchen queue did not render");
+            await staff.close();
+
+            const { page: admin, errors: adminErrors } = await newPage(desktopContext, "/admin/");
+            const adminState = await admin.evaluate(() => ({ views: document.querySelectorAll("[data-admin-view]").length, cards: document.querySelectorAll(".dash-card").length }));
+            report.admin = { adminState, adminErrors };
+            expect(adminState.views >= 5 && adminState.cards >= 2, `Admin dashboard incomplete ${JSON.stringify(adminState)}`);
+            await admin.locator("[data-admin-view=menu]").click();
+            await admin.waitForTimeout(150);
+            expect(await admin.locator("[data-admin-item-row]").count() >= 50, "Admin: menu CMS did not render");
+            await admin.close();
+          }
+
+          {
+            const { page } = await newPage(desktopContext, "/");
+            const worker = await page.evaluate(async () => {
+              if (!("serviceWorker" in navigator)) return { supported: false };
+              const registration = await Promise.race([
+                navigator.serviceWorker.ready,
+                new Promise((_, reject) => setTimeout(() => reject(new Error("service worker timeout")), 15000))
+              ]);
+              return { supported: true, state: registration.active?.state || null, caches: await caches.keys() };
+            });
+            report.serviceWorker = worker;
+            expect(worker.supported && worker.state === "activated", `PWA: service worker not activated ${JSON.stringify(worker)}`);
+            expect(worker.caches.includes("southernmost-v18-20260727b"), `PWA: release cache missing ${JSON.stringify(worker)}`);
+            await page.close();
+          }
+
+          await desktopContext.close();
+          await browser.close();
+          report.failures = failures;
+          fs.writeFileSync("/tmp/southernmost-platform-qa/report.json", JSON.stringify(report, null, 2));
+          console.log(JSON.stringify(report, null, 2));
+          if (failures.length) process.exit(1);
+          NODE
+          node /tmp/southernmost-platform-qa/verify.mjs
+      - name: Upload QA evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: southernmost-platform-v5-qa
+          path: /tmp/southernmost-platform-qa
+          if-no-files-found: warn
+          retention-days: 5
