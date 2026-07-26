@@ -1,4 +1,4 @@
 Release: 20260727a
 Archive SHA-256: abd2e35e7ee921ecd765f54e673550bc7daec7b01fe31b7a50ae2f9b8327c355
-Retry: exact per-part length and SHA-256 validation enabled.
+Retry: capture and upload exact staged-part and reconstructed-archive diagnostics.
 Purpose: reconstruct, validate and stage the complete multi-experience restaurant platform on the dedicated deployment branch.
