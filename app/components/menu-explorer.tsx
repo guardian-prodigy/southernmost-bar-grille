@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { menuCategories } from "../menu-data";
 import type { MenuItem } from "../menu-data";
 import { useOrder } from "./order-provider";
+import { ThreeMenuBook } from "./three-menu-book";
 
 const FAVORITES_KEY = "southernmost-favorites-v1";
 
@@ -12,7 +13,10 @@ export function MenuExplorer() {
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"book" | "list">("book");
   const [pageIndex, setPageIndex] = useState(0);
-  const [turn, setTurn] = useState({ direction: "next", key: 0 });
+  const [turn, setTurn] = useState<{
+    direction: "next" | "previous";
+    key: number;
+  }>({ direction: "next", key: 0 });
   const [favorites, setFavorites] = useState<string[]>([]);
   const [favoritesReady, setFavoritesReady] = useState(false);
   const [detailItem, setDetailItem] = useState<MenuItem | null>(null);
@@ -191,9 +195,9 @@ export function MenuExplorer() {
 
         {view === "book" && (
           <div
-            className="menu-folio-stage"
+            className="menu-pro-stage"
             tabIndex={0}
-            aria-label={`${currentPage.name} menu folio. Use left and right arrow keys to change chapters.`}
+            aria-label={`${currentPage.name} menu chapter. Use left and right arrow keys to change chapters.`}
             onTouchStart={(event) => {
               touchStart.current = event.touches[0]?.clientX ?? null;
             }}
@@ -205,7 +209,7 @@ export function MenuExplorer() {
               goToPage(start > end ? pageIndex + 1 : pageIndex - 1);
             }}
           >
-            <nav className="menu-folio-chapters" aria-label="Menu chapters">
+            <nav className="menu-pro-chapters" aria-label="Menu chapters">
               {menuCategories.map((group, index) => (
                 <button
                   className={index === pageIndex ? "active" : ""}
@@ -214,51 +218,50 @@ export function MenuExplorer() {
                   onClick={() => goToPage(index)}
                   aria-current={index === pageIndex ? "page" : undefined}
                 >
+                  <span>{String(index + 1).padStart(2, "0")}</span>
                   {group.name}
                 </button>
               ))}
             </nav>
-            <div
-              className={`menu-folio folio-turn-${turn.direction}`}
-              key={turn.key}
-              aria-label={`${currentPage.name} menu chapter`}
-            >
-              <div className="menu-folio-cover" aria-hidden="true" />
-              <section className="menu-folio-page menu-folio-page-intro">
-                <div className="menu-folio-page-number">
-                  Chapter {String(pageIndex + 1).padStart(2, "0")}
-                </div>
-                <div className="menu-folio-photo">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={currentPage.image} alt="" />
-                  <span className="menu-folio-photo-shade" aria-hidden="true" />
-                  <p>Southernmost</p>
-                </div>
-                <div className="menu-folio-chapter-copy">
-                  <span>Coastal · Caribbean · American</span>
-                  <h3>{currentPage.name}</h3>
-                  <p>{currentPage.subtitle}</p>
-                </div>
-                <small className="menu-folio-location">
-                  West Palm Beach · Florida
-                </small>
-              </section>
-              <section className="menu-folio-page menu-folio-page-items">
-                <div className="menu-folio-page-header">
+
+            <div className="menu-pro-book-layout">
+              <div className="menu-pro-canvas-column">
+                <ThreeMenuBook
+                  categoryName={currentPage.name}
+                  subtitle={currentPage.subtitle}
+                  pageNumber={pageIndex + 1}
+                  pageCount={menuCategories.length}
+                  items={currentPage.items}
+                  direction={turn.direction}
+                  animationKey={turn.key}
+                />
+                <p className="menu-pro-canvas-note">
+                  Drag your pointer to inspect · Change chapters to turn the page
+                </p>
+              </div>
+
+              <section
+                className="menu-pro-readable"
+                aria-labelledby={`menu-pro-title-${currentPage.id}`}
+              >
+                <header>
                   <div>
-                    <span>Southernmost Bar &amp; Grille</span>
-                    <h3>{currentPage.name}</h3>
+                    <span>Chapter {String(pageIndex + 1).padStart(2, "0")}</span>
+                    <h3 id={`menu-pro-title-${currentPage.id}`}>
+                      {currentPage.name}
+                    </h3>
+                    <p>{currentPage.subtitle}</p>
                   </div>
-                  <span>
+                  <b>
                     {String(pageIndex + 1).padStart(2, "0")} /{" "}
                     {String(menuCategories.length).padStart(2, "0")}
-                  </span>
-                </div>
-                <div className="menu-folio-items">
+                  </b>
+                </header>
+                <div className="menu-pro-items">
                   {currentPage.items.map((item) => (
-                    <article className="menu-folio-item" key={item.id}>
+                    <article className="menu-pro-item" key={item.id}>
                       <button
-                        className="menu-folio-item-copy"
+                        className="menu-pro-item-copy"
                         type="button"
                         onClick={() => setDetailItem(item)}
                         aria-label={`View details for ${item.name}`}
@@ -269,10 +272,10 @@ export function MenuExplorer() {
                         </span>
                         <p>{item.description}</p>
                       </button>
-                      <div className="menu-folio-item-actions">
+                      <div className="menu-pro-item-actions">
                         <strong>${item.price.toFixed(2)}</strong>
                         <button
-                          className={`menu-folio-save ${
+                          className={`menu-pro-save ${
                             favorites.includes(item.id) ? "is-saved" : ""
                           }`}
                           type="button"
@@ -288,13 +291,8 @@ export function MenuExplorer() {
                           </span>
                         </button>
                         <button
-                          className="menu-folio-add"
+                          className="menu-pro-add"
                           type="button"
-                          aria-label={
-                            item.alcoholic
-                              ? `${item.name} is available dine-in only`
-                              : `Add ${item.name} to order`
-                          }
                           onClick={() => addFromMenu(item)}
                         >
                           {item.alcoholic ? "Dine-in · 21+" : "Add"}
@@ -303,21 +301,20 @@ export function MenuExplorer() {
                     </article>
                   ))}
                 </div>
-                <p className="menu-folio-page-footer">
-                  Tap a dish for details · Please tell us about allergies
+                <p className="menu-pro-allergy">
+                  Select a dish for details · Please tell us about allergies
                 </p>
               </section>
-              <div className="menu-folio-spine" aria-hidden="true" />
             </div>
 
-            <div className="menu-folio-controls">
+            <div className="menu-pro-controls">
               <button
                 type="button"
                 disabled={pageIndex === 0}
                 onClick={() => goToPage(pageIndex - 1)}
               >
                 <span aria-hidden="true">←</span>
-                Previous chapter
+                Previous
               </button>
               <p aria-live="polite">
                 <strong>{currentPage.name}</strong>
@@ -330,7 +327,7 @@ export function MenuExplorer() {
                 disabled={pageIndex === menuCategories.length - 1}
                 onClick={() => goToPage(pageIndex + 1)}
               >
-                Next chapter
+                Next
                 <span aria-hidden="true">→</span>
               </button>
             </div>
