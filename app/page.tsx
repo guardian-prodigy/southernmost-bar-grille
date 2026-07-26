@@ -1,23 +1,23 @@
 import Link from "next/link";
-import { GalleryExperience } from "./components/gallery-experience";
-import { HomeExperience } from "./components/home-experience";
 
-const favorites = [
+const signatures = [
   {
     name: "Jerk Lamb Chops",
     description:
       "Caribbean jerk, guava rum glaze, coconut rice, vegetables and sweet plantains.",
     price: "$34",
     image: "/assets/lamb.webp",
-    tag: "Chef's signature",
+    note: "Chef's signature",
+    className: "home-v2-signature-primary",
   },
   {
     name: "Blackened Mahi",
     description:
-      "Fresh Florida-style mahi with coconut rice and seasonal grilled vegetables.",
+      "Fresh Florida-style mahi with coconut rice and seasonal vegetables.",
     price: "$24",
     image: "/assets/mahi.webp",
-    tag: "Fresh catch",
+    note: "Fresh catch",
+    className: "",
   },
   {
     name: "Southernmost Wings",
@@ -25,33 +25,35 @@ const favorites = [
       "Crisp wings tossed in one of twelve island-inspired house flavors.",
     price: "From $15",
     image: "/assets/wings.webp",
-    tag: "Crowd favorite",
+    note: "House favorite",
+    className: "",
   },
   {
     name: "Southernmost Sunset",
     description:
-      "A tropical rum cocktail with pineapple, citrus and a sunset finish.",
+      "Rum, pineapple, orange and a slow fade into island time.",
     price: "$12",
     image: "/assets/cocktails.webp",
-    tag: "Signature sip",
+    note: "Signature cocktail",
+    className: "",
   },
 ];
 
 const events = [
   {
-    day: "FRI",
+    day: "Friday",
     title: "Live Music Fridays",
     copy: "Local artists, coastal plates and an easy start to the weekend.",
     note: "Evening",
   },
   {
-    day: "SAT",
+    day: "Saturday",
     title: "Southernmost Saturdays",
     copy: "Live entertainment, tropical cocktails and late-night energy.",
     note: "Open until 2 AM",
   },
   {
-    day: "SUN",
+    day: "Sunday",
     title: "Acoustic Brunch",
     copy: "A laid-back Sunday session with island-inspired brunch energy.",
     note: "Brunch",
@@ -93,287 +95,228 @@ export default function Home() {
   };
 
   return (
-    <main id="main-content">
+    <main id="main-content" className="home-v2">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(restaurantSchema) }}
       />
-      <section className="hero">
-        <div className="hero-image" aria-hidden="true" />
-        <div className="hero-shade" aria-hidden="true" />
-        <div className="hero-sun" aria-hidden="true" />
-        <div className="hero-palm-shadow palm-shadow-one" aria-hidden="true" />
-        <div className="hero-palm-shadow palm-shadow-two" aria-hidden="true" />
-        <div className="shell hero-grid">
-          <div className="hero-copy">
-            <p className="eyebrow light">West Palm&apos;s island room</p>
-            <h1>
-              Where West Palm
-              <br />goes <em>island.</em>
-            </h1>
-            <p className="hero-lead">
-              Coastal fire, handcrafted cocktails and late-night tropical
-              energy—wrapped in one unforgettable neighborhood escape.
-            </p>
-            <div className="button-row">
-              <Link className="button sun" href="/menu">
-                Open the 3D menu <span aria-hidden="true">↗</span>
-              </Link>
-              <Link className="button glass" href="/visit">
-                Find the island
-              </Link>
-            </div>
-            <div className="hero-proof" aria-label="Southernmost highlights">
-              <span>✦ Coastal kitchen</span>
-              <span>✦ Live music</span>
-              <span>✦ Happy hour 5–7</span>
-            </div>
-          </div>
 
-          <aside className="hero-visual" aria-label="Explore Southernmost">
-            <div className="hero-book-glow" aria-hidden="true" />
-            <Link className="hero-menu-book" href="/menu">
-              <span className="hero-book-pages" aria-hidden="true" />
-              <span className="hero-book-spine" aria-hidden="true" />
-              <span className="hero-book-cover">
-                <span className="hero-book-kicker">The taste of island time</span>
-                <span className="hero-book-brand">Southernmost</span>
-                <span className="hero-book-subbrand">
-                  Coastal Kitchen · Bar · Island Vibes
-                </span>
-                <span className="hero-book-rule" />
-                <strong>MENU</strong>
-                <small>West Palm Beach · Florida</small>
-              </span>
-            </Link>
-            <div className="hero-cocktail-card">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/assets/cocktails.webp" alt="" />
-              <span>Signature sip</span>
-              <strong>Southernmost Sunset</strong>
-            </div>
-            <div className="hero-night-card">
-              <span className="live-dot" />
-              <div>
-                <small>Tonight</small>
-                <strong>Golden hour into island night.</strong>
-              </div>
-            </div>
-            <span className="hero-seal" aria-hidden="true">
-              <b>SM</b>
-              <small>WEST PALM</small>
-            </span>
-          </aside>
-        </div>
-        <div className="marquee" aria-hidden="true">
-          <div>
-            SOUTH FLORIDA FLAVOR <i>✦</i> COLD DRINKS <i>✦</i> LIVE MUSIC{" "}
-            <i>✦</i> BILLIARDS <i>✦</i> ISLAND TIME <i>✦</i> SOUTH FLORIDA
-            FLAVOR <i>✦</i> COLD DRINKS <i>✦</i> LIVE MUSIC
-          </div>
-        </div>
-      </section>
-
-      <HomeExperience />
-
-      <section className="section intro-section">
-        <div className="shell intro-grid">
-          <div className="intro-sticky">
-            <p className="eyebrow">Meet Southernmost</p>
-            <h2 className="section-title">
-              A little farther
+      <section className="home-v2-hero" aria-labelledby="home-v2-title">
+        <div className="home-v2-hero-image" aria-hidden="true" />
+        <div className="home-v2-hero-overlay" aria-hidden="true" />
+        <div className="shell home-v2-hero-inner">
+          <div className="home-v2-hero-copy">
+            <p className="home-v2-kicker">Southernmost · West Palm Beach</p>
+            <h1 id="home-v2-title">
+              Coastal plates.
               <br />
-              <em>from ordinary.</em>
-            </h2>
+              Cold drinks.
+              <br />
+              <em>Island time.</em>
+            </h1>
+            <p>
+              Fresh seafood, bold Caribbean flavor, handcrafted cocktails and
+              live energy—seven days a week.
+            </p>
+            <div className="home-v2-actions">
+              <Link className="home-v2-primary-action" href="/menu">
+                Explore the menu <span aria-hidden="true">↗</span>
+              </Link>
+              <Link className="home-v2-secondary-action" href="/visit">
+                Plan your visit
+              </Link>
+            </div>
           </div>
-          <div className="intro-copy">
-            <p className="lead-copy">
-              We bring the ease of the Florida Keys to your Palm Beach
-              neighborhood: bold island flavor, honest hospitality and a room
-              that knows how to have a good time.
+          <p className="home-v2-hero-location">
+            <span>4449 Okeechobee Blvd</span>
+            <span>West Palm Beach, Florida</span>
+          </p>
+        </div>
+        <div className="home-v2-pulse">
+          <div className="shell home-v2-pulse-grid">
+            <p>
+              <span>Today</span>
+              Open from 11 AM
             </p>
             <p>
-              Come for lunch, date night, a birthday, the game or a quick drink.
-              Stay for the music, a round of billiards and one more story with
-              the people at your table.
+              <span>Daily</span>
+              Happy hour · 5–7 PM
             </p>
-            <div className="experience-list">
-              <article>
-                <span>01</span>
-                <div>
-                  <h3>Coastal kitchen</h3>
-                  <p>
-                    Seafood, premium steaks, island signatures, burgers and
-                    shareable plates made for the whole table.
-                  </p>
-                </div>
-              </article>
-              <article>
-                <span>02</span>
-                <div>
-                  <h3>Bar with a pulse</h3>
-                  <p>
-                    Tropical signatures, frozen favorites, premium pours and
-                    plenty of cold beer.
-                  </p>
-                </div>
-              </article>
-              <article>
-                <span>03</span>
-                <div>
-                  <h3>Something always happening</h3>
-                  <p>
-                    Live music, billiards, acoustic brunch and watch-party
-                    energy throughout the week.
-                  </p>
-                </div>
-              </article>
-            </div>
+            <p>
+              <span>Weekends</span>
+              Live music &amp; late nights
+            </p>
+            <a href="tel:+17279106118">
+              <span>Contact</span>
+              +1 (727) 910-6118
+            </a>
           </div>
         </div>
       </section>
 
-      <section className="section favorites-section" id="favorites">
+      <section className="home-v2-intro" aria-labelledby="home-v2-intro-title">
+        <div className="shell home-v2-intro-grid">
+          <div className="home-v2-intro-heading">
+            <p className="home-v2-kicker">A neighborhood escape</p>
+            <h2 id="home-v2-intro-title">
+              The neighborhood bar took a trip <em>south.</em>
+            </h2>
+          </div>
+          <div className="home-v2-intro-copy">
+            <p className="home-v2-intro-lead">
+              Southernmost brings the ease of the Florida Keys to West Palm:
+              generous plates, a serious bar and a room built for a good time.
+            </p>
+            <p>
+              Come for lunch, date night, the game or a quick drink. Stay for
+              live music, billiards and one more story with the people at your
+              table.
+            </p>
+          </div>
+        </div>
+        <div className="shell home-v2-pillars">
+          <article>
+            <span>01</span>
+            <h3>Coastal kitchen</h3>
+            <p>
+              Seafood, premium steaks, island signatures and shareable plates.
+            </p>
+          </article>
+          <article>
+            <span>02</span>
+            <h3>Proper tropical bar</h3>
+            <p>
+              Handcrafted signatures, frozen favorites and plenty of cold beer.
+            </p>
+          </article>
+          <article>
+            <span>03</span>
+            <h3>Live after dark</h3>
+            <p>
+              Weekend music, billiards, watch parties and late-night energy.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section className="home-v2-signatures" aria-labelledby="signature-title">
         <div className="shell">
-          <div className="section-heading">
+          <div className="home-v2-section-heading">
             <div>
-              <p className="eyebrow">Worth the trip</p>
-              <h2 className="section-title">
-                Meet the <em>favorites.</em>
+              <p className="home-v2-kicker">From the kitchen &amp; bar</p>
+              <h2 id="signature-title">
+                The Southernmost <em>signatures.</em>
               </h2>
             </div>
-            <Link className="text-link" href="/menu">
+            <Link href="/menu">
               View the full menu <span aria-hidden="true">→</span>
             </Link>
           </div>
-          <div className="food-grid">
-            {favorites.map((item, index) => (
-              <article className="food-card" key={item.name}>
-                <Link href="/menu" aria-label={`View ${item.name} on the menu`}>
-                  <div className="food-image">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={item.image} alt={item.name} />
-                    <span>{item.tag}</span>
-                    <b>{String(index + 1).padStart(2, "0")}</b>
-                  </div>
-                  <div className="food-card-copy">
-                    <div>
-                      <h3>{item.name}</h3>
-                      <p>{item.description}</p>
-                    </div>
-                    <strong>{item.price}</strong>
-                  </div>
-                </Link>
-              </article>
+          <div className="home-v2-signature-grid">
+            {signatures.map((item) => (
+              <Link
+                className={`home-v2-signature-card ${item.className}`}
+                href="/menu"
+                key={item.name}
+                aria-label={`View ${item.name} on the menu`}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={item.image} alt={item.name} />
+                <span className="home-v2-signature-shade" aria-hidden="true" />
+                <span className="home-v2-signature-note">{item.note}</span>
+                <span className="home-v2-signature-copy">
+                  <span>
+                    <strong>{item.name}</strong>
+                    <small>{item.description}</small>
+                  </span>
+                  <b>{item.price}</b>
+                </span>
+              </Link>
             ))}
           </div>
         </div>
       </section>
 
-      <GalleryExperience />
-
-      <section className="section experience-section">
-        <div className="shell experience-grid">
-          <article className="experience-feature image-interior">
-            <div className="feature-scrim" />
-            <div className="feature-copy">
-              <p className="eyebrow light">Made for gathering</p>
-              <h2>Lunch. Dinner. One more round.</h2>
-              <p>
-                A relaxed neighborhood room with enough polish for date night
-                and enough energy for the whole crew.
-              </p>
-              <Link className="button cream" href="/visit">
-                Find your table
-              </Link>
-            </div>
-          </article>
-          <div className="experience-stack">
-            <article className="experience-mini happy-hour">
-              <div>
-                <p className="eyebrow">Daily · 5–7 PM</p>
-                <h3>Golden hour tastes better here.</h3>
-                <p>
-                  Ease into the evening with drink specials, shareable plates
-                  and that end-of-day island glow.
-                </p>
-              </div>
-              <span className="sun-disc" aria-hidden="true" />
-            </article>
-            <article className="experience-mini image-music">
-              <div className="feature-scrim" />
-              <div className="feature-copy compact">
-                <p className="eyebrow light">Live every weekend</p>
-                <h3>Good music. No bad seats.</h3>
-                <Link className="text-link light-link" href="/events">
-                  See what&apos;s on <span aria-hidden="true">→</span>
-                </Link>
-              </div>
-            </article>
-          </div>
+      <section className="home-v2-atmosphere" aria-labelledby="atmosphere-title">
+        <div className="home-v2-atmosphere-image" aria-hidden="true" />
+        <div className="home-v2-atmosphere-overlay" aria-hidden="true" />
+        <div className="shell home-v2-atmosphere-inner">
+          <p className="home-v2-kicker">Stay awhile</p>
+          <h2 id="atmosphere-title">
+            Polished enough for date night.
+            <br />
+            Relaxed enough for <em>one more round.</em>
+          </h2>
+          <p>
+            Lunch, dinner, live music and easy South Florida nights—under one
+            roof.
+          </p>
+          <Link className="home-v2-secondary-action" href="/visit">
+            See the space
+          </Link>
         </div>
       </section>
 
-      <section className="section events-section">
-        <div className="shell">
-          <div className="section-heading light-heading">
-            <div>
-              <p className="eyebrow light">This week</p>
-              <h2 className="section-title">
-                Come for dinner.
-                <br />
-                Stay for <em>what&apos;s next.</em>
-              </h2>
-            </div>
-            <Link className="text-link light-link" href="/events">
-              Explore all events <span aria-hidden="true">→</span>
+      <section className="home-v2-week" aria-labelledby="week-title">
+        <div className="shell home-v2-week-grid">
+          <div className="home-v2-week-heading">
+            <p className="home-v2-kicker">This week</p>
+            <h2 id="week-title">
+              Dinner is only the <em>beginning.</em>
+            </h2>
+            <p>
+              From acoustic brunch to Saturday-night energy, there is always a
+              reason to stay.
+            </p>
+            <Link href="/events">
+              See all events <span aria-hidden="true">→</span>
             </Link>
           </div>
-          <div className="event-list">
-            {events.map((event) => (
-              <article key={event.day}>
-                <div className="event-day">{event.day}</div>
-                <div>
-                  <h3>{event.title}</h3>
+          <div className="home-v2-event-list">
+            {events.map((event, index) => (
+              <Link href="/events" key={event.day}>
+                <span className="home-v2-event-number">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <span className="home-v2-event-copy">
+                  <small>{event.day}</small>
+                  <strong>{event.title}</strong>
                   <p>{event.copy}</p>
-                </div>
-                <span>{event.note}</span>
-                <Link href="/events" aria-label={`Learn more about ${event.title}`}>
-                  ↗
-                </Link>
-              </article>
+                </span>
+                <span className="home-v2-event-note">
+                  {event.note} <b aria-hidden="true">↗</b>
+                </span>
+              </Link>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="section visit-teaser">
-        <div className="shell visit-teaser-grid">
+      <section className="home-v2-visit" aria-labelledby="visit-title">
+        <div className="shell home-v2-visit-grid">
           <div>
-            <p className="eyebrow">Your table is closer than you think</p>
-            <h2 className="section-title">
-              Meet us at the
-              <br />
-              corner of <em>island time.</em>
+            <p className="home-v2-kicker">Find your island time</p>
+            <h2 id="visit-title">
+              Meet us in <em>West Palm.</em>
             </h2>
           </div>
-          <div className="visit-address">
+          <div className="home-v2-address">
             <p>4449 Okeechobee Blvd</p>
             <p>West Palm Beach, FL 33417</p>
-            <p className="muted">Okeechobee at Military Trail</p>
-            <div className="button-row">
-              <a
-                className="button ink"
-                href="https://www.google.com/maps/search/?api=1&query=4449+Okeechobee+Blvd+West+Palm+Beach+FL+33417"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Get directions
-              </a>
-              <a className="button outline-dark" href="tel:+17279106118">
-                Call +1 (727) 910-6118
-              </a>
-            </div>
+            <span>Okeechobee at Military Trail</span>
+          </div>
+          <div className="home-v2-visit-actions">
+            <a
+              className="home-v2-primary-action"
+              href="https://www.google.com/maps/search/?api=1&query=4449+Okeechobee+Blvd+West+Palm+Beach+FL+33417"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Get directions <span aria-hidden="true">↗</span>
+            </a>
+            <a className="home-v2-phone" href="tel:+17279106118">
+              +1 (727) 910-6118
+            </a>
           </div>
         </div>
       </section>
