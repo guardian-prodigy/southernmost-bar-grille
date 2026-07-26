@@ -11,7 +11,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: southernmost-platform-v4-materialize
+  group: southernmost-platform-v4-materialize-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -28,10 +28,46 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(find .deploy/platform-v4 -maxdepth 1 -type f -name 'part-*' | wc -l)" -eq 12
-          cat .deploy/platform-v4/part-* > /tmp/platform-v4.b64
+          expected_names=(part-00 part-01 part-02 part-03 part-04 part-05 part-06 part-07 part-08 part-09 part-10 part-11)
+          expected_lengths=(12000 12000 12000 12000 12000 12000 12000 12000 12000 12000 12000 10140)
+          expected_hashes=(
+            a4ec801436e87d148e4d6a3bbd88fd22b07e88394ff015b833fa8cc031fa227e
+            240f939cb1e11b2fab234ed4bcaebdc4f65eb4b27b3d4ad913f07c66e643efda
+            f2e20233a2ce0d28270bc8e3f56eb14ca915ea6c63826594f662e2b95fa4f3a1
+            0e4190cc8afd7cabc49cabe5f983ebad4a211cecc968ae7b66c3c336a47b37a5
+            0bd94bd0efd237067f53580e2509dcb91bdd495cadb12b6a3b4b4bf2be0c6f7e
+            f97e484deb99c7034cc9af4d0bf1b0fca6628c61f9f0804318fbc1fc29db1150
+            e0b8d06b1061532d8fee2c305ead914581456f8c36f160e5912b2b2895e18833
+            61292004b16b1756a65f241a116b7552e139d0aa5d699641c396157e2e332774
+            e1b432002b346cd2fd9c4796f8a0ab3c64c34ac02f889990c44747b11867d52e
+            2f16529a3f2ec3bc8f145a9da10e3a583ef88bef5a46fae6f36dffb39c827e93
+            57efb5d530d1027c1d3faa5a379cf2322d274fcbe41074176e58b49ef248c17d
+            4a3076ba0a6a6a55b893a24ea0d9ac3220e06bd5e2e10de0f09f35f1c69b170a
+          )
+
+          test -d .deploy/platform-v4
+          actual_count="$(find .deploy/platform-v4 -maxdepth 1 -type f -name 'part-*' | wc -l | tr -d ' ')"
+          echo "Found ${actual_count} staged parts"
+          test "$actual_count" -eq 12
+
+          for index in "${!expected_names[@]}"; do
+            file=".deploy/platform-v4/${expected_names[$index]}"
+            test -f "$file"
+            actual_length="$(wc -c < "$file" | tr -d ' ')"
+            actual_hash="$(sha256sum "$file" | awk '{print $1}')"
+            echo "${expected_names[$index]} length=${actual_length} sha256=${actual_hash}"
+            test "$actual_length" -eq "${expected_lengths[$index]}"
+            test "$actual_hash" = "${expected_hashes[$index]}"
+          done
+
+          : > /tmp/platform-v4.b64
+          for name in "${expected_names[@]}"; do
+            cat ".deploy/platform-v4/${name}" >> /tmp/platform-v4.b64
+          done
+          test "$(wc -c < /tmp/platform-v4.b64 | tr -d ' ')" -eq 142140
           base64 --decode /tmp/platform-v4.b64 > /tmp/platform-v4.tar.gz
           echo "abd2e35e7ee921ecd765f54e673550bc7daec7b01fe31b7a50ae2f9b8327c355  /tmp/platform-v4.tar.gz" | sha256sum --check --strict
+          test "$(wc -c < /tmp/platform-v4.tar.gz | tr -d ' ')" -eq 106603
           tar -tzf /tmp/platform-v4.tar.gz > /tmp/platform-v4-files.txt
           grep -q '^index.html$' /tmp/platform-v4-files.txt
           grep -q '^platform.js$' /tmp/platform-v4-files.txt
