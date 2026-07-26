@@ -1,0 +1,68 @@
+name: Verify final cleaned Southernmost deployment
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/verify-final-public-20260726b.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-final-public:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Verify final public Pages release after repository cleanup
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://guardian-prodigy.github.io/southernmost-bar-grille"
+          ready=""
+
+          for attempt in $(seq 1 60); do
+            echo "Final public check ${attempt}/60"
+            rm -f /tmp/index.html /tmp/upgrade.css /tmp/app.js /tmp/upgrade.js /tmp/three.js /tmp/sw.js /tmp/qr.html /tmp/qr.png
+
+            if curl -fsSL --connect-timeout 15 --max-time 60 "$base/?v=20260726b&fresh=1" -o /tmp/index.html \
+              && grep -q 'data-release="20260726b"' /tmp/index.html \
+              && grep -q 'styles.css?v=20260726b' /tmp/index.html \
+              && grep -q 'upgrade.css?v=20260726b' /tmp/index.html \
+              && grep -q 'app.js?v=20260726b' /tmp/index.html \
+              && grep -q 'upgrade.js?v=20260726b' /tmp/index.html \
+              && grep -q 'three-scenes-v2.js?v=20260726b' /tmp/index.html \
+              && grep -q 'mobile-book-reader' /tmp/index.html \
+              && grep -q 'Southernmost Island Guide' /tmp/index.html \
+              && grep -q 'southernmost-wordmark.webp' /tmp/index.html \
+              && ! grep -qi 'hotfix\.css\|hotfix\.js\|atob(' /tmp/index.html \
+              && curl -fsSL "$base/upgrade.css?v=20260726b" -o /tmp/upgrade.css \
+              && grep -q 'Production interaction guardrails — 20260726b' /tmp/upgrade.css \
+              && grep -q 'mobile-action-bar' /tmp/upgrade.css \
+              && grep -q 'drawer-backdrop.is-open' /tmp/upgrade.css \
+              && curl -fsSL "$base/app.js?v=20260726b" -o /tmp/app.js \
+              && grep -q 'SouthernmostSyncScrollLock' /tmp/app.js \
+              && grep -q 'serviceWorker.register("./sw.js"' /tmp/app.js \
+              && curl -fsSL "$base/upgrade.js?v=20260726b" -o /tmp/upgrade.js \
+              && grep -q 'southernmost:close-guide' /tmp/upgrade.js \
+              && curl -fsSL "$base/three-scenes-v2.js?v=20260726b" -o /tmp/three.js \
+              && grep -q 'pocket' /tmp/three.js \
+              && curl -fsSL "$base/sw.js?v=20260726b" -o /tmp/sw.js \
+              && grep -q 'southernmost-v16-20260726b' /tmp/sw.js \
+              && grep -q './qr/lounge-04.html' /tmp/sw.js \
+              && curl -fsSL "$base/qr/table-12.html?v=20260726b" -o /tmp/qr.html \
+              && grep -q 'table=12' /tmp/qr.html \
+              && grep -q 'zone=dining' /tmp/qr.html \
+              && curl -fsSL "$base/assets/qr-table-12.png?v=20260726b" -o /tmp/qr.png \
+              && test "$(wc -c < /tmp/qr.png)" -gt 3000; then
+              ready="yes"
+              break
+            fi
+
+            sleep 10
+          done
+
+          test -n "$ready"
+          echo "Final cleaned Southernmost deployment is live and serving release 20260726b."
+          wc -c /tmp/index.html /tmp/upgrade.css /tmp/app.js /tmp/upgrade.js /tmp/three.js /tmp/sw.js /tmp/qr.png
