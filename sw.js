@@ -1,7 +1,7 @@
 const CACHE = "southernmost-v18-20260727b";
 const CORE = [
   "./", "./index.html", "./platform.css", "./data.js", "./platform-store.js", "./platform.js", "./three-scenes-pro.js", "./manifest.webmanifest",
-  "./menu/", "./order/", "./events/", "./private-events/", "./visit/", "./loyalty/", "./staff/", "./admin/", "./admin/qr-kit.html",
+  "./menu/", "./order/", "./order/order-responsive.css", "./events/", "./private-events/", "./visit/", "./loyalty/", "./staff/", "./admin/", "./admin/qr-kit.html",
   "./qr/table-12.html", "./qr/patio-07.html", "./qr/bar-03.html", "./qr/lounge-04.html",
   "./legal/terms.html", "./legal/privacy.html", "./legal/allergens.html", "./legal/refunds.html", "./legal/accessibility.html",
   "./assets/hero.webp", "./assets/interior.webp", "./assets/lamb.webp", "./assets/wings.webp", "./assets/burger.webp", "./assets/mahi.webp", "./assets/seafood.webp", "./assets/tacos.webp", "./assets/cocktails.webp", "./assets/key-lime.webp", "./assets/music.webp",
