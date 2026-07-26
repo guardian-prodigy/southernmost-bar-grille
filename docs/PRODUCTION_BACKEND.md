@@ -1,63 +1,65 @@
-# Production Backend Requirements
+# Southernmost Production Backend
 
-## Core services
+The public GitHub Pages build implements the full customer, staff and manager journey in the browser. The following services must be connected before real transactions.
 
-1. **Venue and table service**
-   - Signed QR tokens mapped to venue, table, zone and optional server station
-   - Token revocation and rotation
-   - Table occupancy and session status
+## Recommended architecture
 
-2. **Guest verification**
-   - SMS one-time-password provider
-   - Rate limiting, abuse controls and verification expiry
-   - Optional payment preauthorization before opening a tab
+- Next.js and TypeScript application layer
+- PostgreSQL or Supabase for guests, tabs, orders, menu, events and audit records
+- Redis for session locks, signed QR state, rate limiting and idempotency
+- Realtime subscriptions or WebSockets for guest, kitchen, bar and server updates
+- Payment provider and POS selected together
+- SMS verification provider with abuse controls
+- Transactional email and receipt provider
+- Object storage for approved photography and menu assets
+- Privacy-conscious analytics, monitoring and error tracing
 
-3. **Menu and inventory**
-   - Categories, items, modifiers, prices, taxes, happy hour and availability
-   - Sold-out and low-stock states pushed in real time
-   - Alcohol availability based on time and venue rules
+## Core domains
 
-4. **Ordering**
-   - Idempotent order-round submission
-   - Kitchen/bar routing and status updates
-   - Point-of-sale acknowledgement and failure recovery
-   - Guest notifications and server escalation
+### Guest and QR security
 
-5. **Server assignment**
-   - Shift roster, sections, table ownership and workload
-   - Reassignment audit trail
-   - Assistance and service-call queue
+- Verify mobile numbers and rate-limit OTP sends and attempts
+- Restore open tabs on another device
+- Keep marketing consent separate from transactional messaging
+- Issue signed, revocable location tokens for tables, bar seats, patio areas and billiards stations
+- Rotate compromised QR tokens without replacing every physical sign
+- Require staff approval for suspicious or high-value sessions
 
-6. **Payments**
-   - PCI-compliant provider and digital-wallet support
-   - Preauthorization, incremental authorization, capture, tip adjustment, refund and void
-   - Webhook signature verification and idempotency
-   - Receipt generation and tax reconciliation
+### Tabs, payments and split checks
 
-7. **Reservations and events**
-   - Reservation provider or first-party calendar
-   - Capacity rules, deposits and confirmations
-   - CRM routing for private-event inquiries
+- Processor-backed authorization for digital tabs
+- Staff-approved pay-at-server tabs
+- Authorization increases where supported
+- Split by person, item, exact amount or evenly
+- Partial and whole-tab payments
+- Voids, comps, refunds and disputes with reason codes
+- No raw card storage
 
-## Suggested stack
+### Orders and availability
 
-- Next.js + React + TypeScript
-- Node API or Next.js route handlers
-- PostgreSQL/Supabase or MongoDB with transactional safeguards
-- Redis for session and idempotency locks
-- Stripe Terminal/Payments or the POS-supported processor
-- Twilio or comparable SMS provider
-- WebSockets/Supabase Realtime for tab and inventory updates
-- Sentry, structured logs, audit trails and uptime monitoring
+- Idempotent order-round submission
+- Independent kitchen and bar routing
+- POS acceptance before showing accepted status
+- Modifiers, allergies, notes and responsible guest ownership
+- Network interruption recovery and duplicate prevention
+- Server-authoritative prices, taxes, happy-hour rules and availability
+- Low-stock states and kitchen/bar pause controls
 
-## Security controls
+### Staff and management
 
-- Signed and expiring table tokens
-- CSRF protection and same-site cookies
-- Server-authoritative pricing and tax calculation
-- Per-route rate limits
-- Input validation and output encoding
-- No full card data in application logs or database
-- Least-privilege staff roles
-- Encrypted secrets and automatic rotation
-- Fraud and unpaid-tab escalation workflow
+- Shift roster, server sections and workload-aware assignment
+- Table transfer and reassignment
+- Kitchen and bar display queues
+- Guest service requests with acknowledgements and timestamps
+- Manager overrides with audit history
+- Open and unpaid tab alerts
+- Event, content, menu and QR management
+
+## Security and reliability
+
+- TLS, least privilege, staff SSO and role-based access
+- Signed tokens, CSRF protection, bot defense and rate limiting
+- Structured audit logs and payment reconciliation
+- Backups with tested restores
+- Load testing for major events
+- Accessibility, privacy and Florida legal review before launch
