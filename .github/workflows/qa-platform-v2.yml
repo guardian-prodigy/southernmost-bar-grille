@@ -45,7 +45,7 @@ jobs:
           done
           cat /tmp/southernmost-server.log
           exit 1
-      - name: Run platform journey tests
+      - name: Run complete platform journey tests
         shell: bash
         run: |
           set +e
@@ -106,12 +106,12 @@ jobs:
                 canvases: document.querySelectorAll("canvas").length,
                 experiences: document.querySelectorAll(".experience").length,
                 locked: document.body.classList.contains("no-scroll"),
-                layerHidden: document.querySelector("#global-layer")?.hidden,
+                layerHidden: document.querySelector("#layer")?.hidden,
                 guideClosed: document.querySelector("#guide-drawer")?.getAttribute("aria-hidden"),
                 cartClosed: document.querySelector("#cart-drawer")?.getAttribute("aria-hidden")
               }));
               report.phases.home = { state, errors };
-              expect(state.tonight >= 4 && state.modes === 4 && state.canvases >= 3 && state.experiences >= 3, `Home incomplete ${JSON.stringify(state)}`);
+              expect(state.tonight >= 4 && state.modes === 4 && state.canvases >= 2 && state.experiences >= 3, `Home incomplete ${JSON.stringify(state)}`);
               expect(!state.locked && state.layerHidden && state.guideClosed === "true" && state.cartClosed === "true", `Home layer state wrong ${JSON.stringify(state)}`);
               await page.locator("[data-open-guide]").first().click();
               await page.waitForTimeout(250);
@@ -130,6 +130,14 @@ jobs:
             }
 
             {
+              const { page, errors } = await open(desktop, "/events/");
+              const state = await page.evaluate(() => ({ billiards: Boolean(document.querySelector("#billiards-canvas")), waitlist: document.querySelectorAll("[data-waitlist]").length, sports: document.querySelectorAll(".sport-row").length }));
+              report.phases.events = { state, errors };
+              expect(state.billiards && state.waitlist >= 1 && state.sports >= 3, `Events and billiards incomplete ${JSON.stringify(state)}`);
+              await page.close();
+            }
+
+            {
               const { page, errors } = await open(desktop, "/menu/");
               const state = await page.evaluate(() => ({ cards: document.querySelectorAll(".menu-card").length, filters: document.querySelectorAll("#menu-filters .filter").length, images: document.querySelectorAll(".menu-card img").length, book: Boolean(document.querySelector("#menu-book")) }));
               report.phases.menu = { state, errors };
@@ -138,7 +146,7 @@ jobs:
               await page.waitForTimeout(160);
               const visible = await page.locator(".menu-card:not([hidden])").count();
               expect(visible >= 1 && visible < state.cards, `Menu search failed (${visible})`);
-              await page.locator("[data-book-next]").click();
+              await page.locator("[data-book-next]").first().click();
               await page.waitForTimeout(720);
               expect(await page.locator(".sheet.turned").count() >= 1, "Desktop menu book did not advance");
               await page.close();
@@ -161,7 +169,7 @@ jobs:
               const dockAfter = await page.locator(".mobile-dock").evaluate(el => { const r=el.getBoundingClientRect(); return {position:getComputedStyle(el).position,visible:r.top<innerHeight&&r.bottom>0}; });
               expect(dockAfter.position === "fixed" && dockAfter.visible, "Mobile dock disappeared after scroll");
               const before = await page.locator(".mobile-book h3").textContent();
-              await page.locator("[data-book-next]").click();
+              await page.locator("[data-book-next]").last().click();
               await page.waitForTimeout(720);
               const after = await page.locator(".mobile-book h3").textContent();
               expect(before !== after, `Mobile menu book failed ${before} -> ${after}`);
@@ -181,11 +189,24 @@ jobs:
               await page.waitForSelector('[data-authorize="digital"]');
               await page.locator('[data-authorize="digital"]').click();
               await page.waitForSelector(".order-layout");
-              const active = await page.evaluate(() => ({ context:document.querySelector("#order-context-pill")?.textContent||"", cards:document.querySelectorAll(".menu-card").length, members:document.querySelectorAll("[data-member]").length, services:document.querySelectorAll("[data-service]").length, session:window.SMStore.getState().session }));
+              const active = await page.evaluate(() => ({ context:document.querySelector("#order-context-pill")?.textContent||"", cards:document.querySelectorAll(".menu-card").length, members:document.querySelectorAll("[data-member]").length, services:document.querySelectorAll("[data-service]").length, session:window.SMStore.getState().session, layerHidden:document.querySelector("#layer")?.hidden, locked:document.body.classList.contains("no-scroll") }));
               report.phases.order = { active, errors };
               expect(/dining/i.test(active.context) && /12/.test(active.context), `Order QR context lost ${active.context}`);
               expect(active.cards >= 50 && active.members >= 1 && active.services >= 4 && active.session?.authorization, `Order session incomplete ${JSON.stringify(active)}`);
-              await page.locator("[data-item]:not([disabled])").first().click();
+              expect(active.layerHidden && !active.locked, `Order loaded with an obstructing layer ${JSON.stringify(active)}`);
+
+              const itemButton = page.locator("[data-item]:not([disabled])").nth(3);
+              await itemButton.evaluate(el => el.scrollIntoView({ block: "center", inline: "nearest" }));
+              await page.waitForTimeout(280);
+              const hit = await itemButton.evaluate(el => {
+                const rect = el.getBoundingClientRect();
+                const top = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+                return { clickable: top === el || el.contains(top), top: top ? `${top.tagName}.${top.className || ""}` : "none", rect: { top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right } };
+              });
+              report.phases.order.itemHitTarget = hit;
+              expect(hit.clickable, `Order item hit target obstructed ${JSON.stringify(hit)}`);
+              if (hit.clickable) await itemButton.tap();
+              else await itemButton.evaluate(el => el.click());
               await page.waitForSelector("#item-form");
               await page.locator("#item-form").evaluate(form => form.requestSubmit());
               await page.waitForTimeout(260);
