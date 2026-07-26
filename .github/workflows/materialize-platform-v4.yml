@@ -1,0 +1,82 @@
+name: Materialize Southernmost platform v4
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/MATERIALIZE_PLATFORM_V4"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: southernmost-platform-v4-materialize
+  cancel-in-progress: false
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout deployment branch
+        uses: actions/checkout@v4
+        with:
+          ref: deploy/platform-v4-20260727a
+          fetch-depth: 0
+
+      - name: Reconstruct and verify source archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(find .deploy/platform-v4 -maxdepth 1 -type f -name 'part-*' | wc -l)" -eq 12
+          cat .deploy/platform-v4/part-* > /tmp/platform-v4.b64
+          base64 --decode /tmp/platform-v4.b64 > /tmp/platform-v4.tar.gz
+          echo "abd2e35e7ee921ecd765f54e673550bc7daec7b01fe31b7a50ae2f9b8327c355  /tmp/platform-v4.tar.gz" | sha256sum --check --strict
+          tar -tzf /tmp/platform-v4.tar.gz > /tmp/platform-v4-files.txt
+          grep -q '^index.html$' /tmp/platform-v4-files.txt
+          grep -q '^platform.js$' /tmp/platform-v4-files.txt
+          grep -q '^order/index.html$' /tmp/platform-v4-files.txt
+          grep -q '^staff/index.html$' /tmp/platform-v4-files.txt
+          grep -q '^admin/index.html$' /tmp/platform-v4-files.txt
+
+      - name: Materialize platform source
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar -xzf /tmp/platform-v4.tar.gz -C .
+          rm -rf .deploy
+          rm -f app.js upgrade.css upgrade.js three-scenes-v2.js three-scenes.js hotfix.css hotfix.js
+          touch .nojekyll
+
+      - name: Validate complete platform
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run check
+          node --check platform-store.js
+          node --check platform.js
+          node --check three-scenes-pro.js
+          node --check data.js
+          node --check sw.js
+          test -s assets/southernmost-wordmark.webp
+          test -s assets/og-southernmost.jpg
+          test -s assets/qr-table-12.png
+          grep -q 'data-release="20260727a"' index.html
+          grep -q 'southernmost-v17-20260727a' sw.js
+          grep -q 'setupStaffPage' platform.js
+          grep -q 'setupAdminPage' platform.js
+          grep -q 'setupOrderPage' platform.js
+          ! grep -Rqi 'atob(' index.html platform-store.js platform.js three-scenes-pro.js
+          ! grep -RqiE '>[^<]*(demo|demonstration)[^<]*<' index.html menu/index.html order/index.html events/index.html private-events/index.html visit/index.html loyalty/index.html staff/index.html admin/index.html
+
+      - name: Commit platform source to deployment branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git status --short
+          git diff --cached --quiet && { echo "No platform changes were generated."; exit 1; }
+          git commit -m "Deploy Southernmost platform v4 20260727a"
+          git push origin HEAD:deploy/platform-v4-20260727a
