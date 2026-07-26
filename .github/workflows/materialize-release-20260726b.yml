@@ -1,0 +1,97 @@
+name: Materialize Southernmost release 20260726b
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/materialize-release-20260726b.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: southernmost-materialize-20260726b
+  cancel-in-progress: false
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout staged release branch
+        uses: actions/checkout@v4
+        with:
+          ref: deploy/production-polish-20260726b
+          fetch-depth: 0
+
+      - name: Reconstruct and verify release archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          stage=".deploy/release-20260726b"
+          test -d "$stage"
+          test "$(find "$stage" -maxdepth 1 -type f -name 'part-*' | wc -l)" -eq 4
+          test "$(wc -c < "$stage/part-00")" -eq 18000
+          test "$(wc -c < "$stage/part-01")" -eq 18000
+          test "$(wc -c < "$stage/part-02")" -eq 18000
+          test "$(wc -c < "$stage/part-03")" -eq 16804
+
+          cat "$stage"/part-* > /tmp/southernmost-release.b64
+          test "$(wc -c < /tmp/southernmost-release.b64)" -eq 70804
+          base64 --decode /tmp/southernmost-release.b64 > /tmp/southernmost-release.tar.gz
+          echo "3d4b22a89b9a67791dc9f5bb98c718a1b29ed52bd7987a36d291a94db37c7980  /tmp/southernmost-release.tar.gz" | sha256sum --check --strict
+          tar -tzf /tmp/southernmost-release.tar.gz > /tmp/release-files.txt
+          test "$(wc -l < /tmp/release-files.txt)" -eq 15
+          grep -qx 'index.html' /tmp/release-files.txt
+          grep -qx 'app.js' /tmp/release-files.txt
+          grep -qx 'upgrade.js' /tmp/release-files.txt
+          grep -qx 'upgrade.css' /tmp/release-files.txt
+          grep -qx 'sw.js' /tmp/release-files.txt
+          grep -qx 'admin/qr-kit.html' /tmp/release-files.txt
+          grep -qx 'qr/lounge-04.html' /tmp/release-files.txt
+          grep -qx 'assets/qr-table-12.png' /tmp/release-files.txt
+
+      - name: Materialize release source
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar -xzf /tmp/southernmost-release.tar.gz -C .
+          rm -f hotfix.css hotfix.js
+          rm -rf .deploy
+          touch .nojekyll
+
+      - name: Validate production source
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run check
+          test ! -e hotfix.css
+          test ! -e hotfix.js
+          test -s assets/qr-table-12.png
+          test -s assets/qr-patio-07.png
+          test -s assets/qr-bar-03.png
+          test -s assets/qr-lounge-04.png
+          test -s qr/table-12.html
+          test -s qr/patio-07.html
+          test -s qr/bar-03.html
+          test -s qr/lounge-04.html
+          grep -q '20260726b' index.html
+          grep -q 'southernmost-v16-20260726b' sw.js
+          grep -q 'table=12' qr/table-12.html
+          grep -q 'patio=07' qr/patio-07.html
+          grep -q 'bar=03' qr/bar-03.html
+          grep -q 'lounge=04' qr/lounge-04.html
+          ! grep -Rqi 'atob(' index.html app.js upgrade.js three-scenes-v2.js
+          ! grep -RqiE '>[^<]*(demo|demonstration)[^<]*<' index.html admin/qr-kit.html legal/*.html
+
+      - name: Commit materialized release branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git status --short
+          git diff --cached --quiet && { echo "No materialized release changes detected."; exit 1; }
+          git commit -m "Deploy Southernmost production release 20260726b"
+          git push origin HEAD:deploy/production-polish-20260726b
