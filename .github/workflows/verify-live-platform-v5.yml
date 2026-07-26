@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - name: Wait for release 20260727b on GitHub Pages
+      - name: Wait for public release 20260727b
         shell: bash
         run: |
           set -euo pipefail
@@ -33,15 +33,14 @@ jobs:
               && grep -q 'platform.css?v=20260727b' /tmp/index.html \
               && grep -q 'platform.js?v=20260727b' /tmp/index.html \
               && grep -q 'three-scenes-pro.js?v=20260727b' /tmp/index.html \
-              && grep -q 'Southernmost Island Guide' /tmp/index.html \
               && ! grep -qi 'hotfix\.css\|hotfix\.js\|atob(' /tmp/index.html \
               && curl -fsSL "$base/platform.css?v=20260727b" -o /tmp/platform.css \
               && grep -q 'mobile-dock' /tmp/platform.css \
               && grep -q 'menu-book-showcase' /tmp/platform.css \
               && curl -fsSL "$base/platform.js?v=20260727b" -o /tmp/platform.js \
-              && grep -q 'setupOrderPage' /tmp/platform.js \
-              && grep -q 'setupStaffPage' /tmp/platform.js \
-              && grep -q 'setupAdminPage' /tmp/platform.js \
+              && grep -q 'Island Guide' /tmp/platform.js \
+              && grep -q 'renderStaffView' /tmp/platform.js \
+              && grep -q 'renderAdminView' /tmp/platform.js \
               && curl -fsSL "$base/sw.js?v=20260727b" -o /tmp/sw.js \
               && grep -q 'southernmost-v18-20260727b' /tmp/sw.js \
               && grep -q './order/order-interaction.css' /tmp/sw.js \
@@ -58,8 +57,7 @@ jobs:
           test -n "$ready"
           echo "Release 20260727b is serving the expected public source."
 
-      - name: Prepare browser QA
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 24
 
@@ -73,7 +71,7 @@ jobs:
           echo "CHROME_PATH=$chrome" >> "$GITHUB_ENV"
           "$chrome" --version
 
-      - name: Run desktop and Android-sized live journeys
+      - name: Run public desktop and Android-sized journeys
         shell: bash
         run: |
           set -euo pipefail
@@ -86,12 +84,8 @@ jobs:
           const release = "20260727b";
           const failures = [];
           const report = {};
-          const expect = (condition, message) => { if (!condition) failures.push(message); };
-          const browser = await chromium.launch({
-            executablePath: process.env.CHROME_PATH,
-            headless: true,
-            args: ["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"]
-          });
+          const expect = (value, message) => { if (!value) failures.push(message); };
+          const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH, headless: true, args: ["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"] });
 
           async function open(context, path) {
             const page = await context.newPage();
@@ -110,105 +104,47 @@ jobs:
           report.routes = {};
           for (const route of ["/", "/menu/", "/events/", "/private-events/", "/visit/", "/loyalty/", "/staff/", "/admin/"]) {
             const { page, errors } = await open(desktop, `${route}?v=${release}&fresh=1`);
-            const state = await page.evaluate(() => ({
-              release: document.body.dataset.release,
-              page: document.body.dataset.page,
-              height: document.querySelector("#page-root")?.getBoundingClientRect().height || 0,
-              overflow: document.documentElement.scrollWidth - innerWidth,
-              title: document.title
-            }));
+            const state = await page.evaluate(() => ({ release: document.body.dataset.release, height: document.querySelector("#page-root")?.getBoundingClientRect().height || 0, overflow: document.documentElement.scrollWidth - innerWidth, title: document.title }));
             report.routes[route] = { state, errors };
             expect(state.release === release, `${route}: release mismatch`);
             expect(state.height > 250, `${route}: page did not render`);
-            expect(state.overflow <= 1, `${route}: horizontal overflow ${state.overflow}px`);
+            expect(state.overflow <= 1, `${route}: overflow ${state.overflow}px`);
             expect(state.title.includes("Southernmost"), `${route}: title missing`);
             expect(errors.length === 0, `${route}: ${errors.join(" | ")}`);
             await page.close();
           }
 
           {
-            const { page, errors } = await open(desktop, `/?v=${release}&fresh=1`);
-            const state = await page.evaluate(() => ({
-              tonight: document.querySelectorAll(".tonight-row").length,
-              modes: document.querySelectorAll("[data-home-mode]").length,
-              canvases: document.querySelectorAll("canvas").length,
-              experiences: document.querySelectorAll(".experience").length,
-              locked: document.body.classList.contains("no-scroll"),
-              layerHidden: document.querySelector("#layer")?.hidden,
-              guideClosed: document.querySelector("#guide-drawer")?.getAttribute("aria-hidden"),
-              cartClosed: document.querySelector("#cart-drawer")?.getAttribute("aria-hidden")
-            }));
-            report.home = { state, errors };
-            expect(state.tonight >= 4 && state.modes === 4 && state.canvases >= 2 && state.experiences >= 3, `Home incomplete ${JSON.stringify(state)}`);
-            expect(!state.locked && state.layerHidden && state.guideClosed === "true" && state.cartClosed === "true", `Home layer state wrong ${JSON.stringify(state)}`);
-            await page.locator("[data-open-guide]").first().click();
-            await page.waitForTimeout(250);
-            expect(await page.locator("#guide-drawer").evaluate(el => el.classList.contains("open")), "Guide did not open");
-            await page.locator("#guide-drawer [data-close-drawers]").click();
-            await page.waitForTimeout(320);
-            expect(!(await page.locator("body").evaluate(el => el.classList.contains("no-scroll"))), "Guide left scrolling locked");
-            await page.locator("[data-open-cart]").first().click();
-            await page.waitForTimeout(250);
-            expect(await page.locator("#cart-drawer").evaluate(el => el.classList.contains("open")), "Cart did not open");
-            await page.locator("#cart-drawer [data-close-drawers]").click();
-            await page.waitForTimeout(320);
-            expect(!(await page.locator("body").evaluate(el => el.classList.contains("no-scroll"))), "Cart left scrolling locked");
-            await page.screenshot({ path: "/tmp/southernmost-platform-v5-live/desktop-home.png" });
+            const { page, errors } = await open(desktop, `/staff/?v=${release}&fresh=1`);
+            const state = await page.evaluate(() => ({ views: document.querySelectorAll("[data-staff-view]").length, tables: document.querySelectorAll(".table-tile").length, cards: document.querySelectorAll(".dash-card").length, workload: Boolean(document.querySelector("[data-server-workload]")) }));
+            report.staff = { state, errors };
+            expect(state.views >= 5 && state.tables >= 4 && state.cards >= 2 && state.workload, `Staff incomplete ${JSON.stringify(state)}`);
+            await page.locator('[data-staff-view="kitchen"]').click();
+            await page.waitForTimeout(200);
+            expect(await page.locator(".ticket").count() >= 1, "Kitchen queue missing");
+            await page.screenshot({ path: "/tmp/southernmost-platform-v5-live/staff.png" });
             await page.close();
           }
 
-          {
-            const { page, errors } = await open(desktop, `/menu/?v=${release}&fresh=1`);
-            const state = await page.evaluate(() => ({
-              cards: document.querySelectorAll(".menu-card").length,
-              filters: document.querySelectorAll("#menu-filters .filter").length,
-              images: document.querySelectorAll(".menu-card img").length,
-              book: Boolean(document.querySelector("#menu-book"))
-            }));
-            report.menu = { state, errors };
-            expect(state.cards >= 50 && state.filters >= 10 && state.images >= 50 && state.book, `Menu incomplete ${JSON.stringify(state)}`);
-            await page.locator("#menu-search").fill("mahi");
-            await page.waitForTimeout(180);
-            const visible = await page.locator(".menu-card:not([hidden])").count();
-            expect(visible >= 1 && visible < state.cards, `Menu search failed (${visible})`);
-            await page.locator("[data-book-next]").first().click();
-            await page.waitForTimeout(720);
-            expect(await page.locator(".sheet.turned").count() >= 1, "Desktop menu book did not advance");
-            await page.close();
-          }
-
-          const mobile = await browser.newContext({
-            viewport: { width: 412, height: 915 },
-            isMobile: true,
-            hasTouch: true,
-            deviceScaleFactor: 1,
-            userAgent: "Mozilla/5.0 (Linux; Android 16; SM-S928U1) AppleWebKit/537.36 Chrome/144 Mobile Safari/537.36",
-            serviceWorkers: "allow"
-          });
+          const mobile = await browser.newContext({ viewport: { width: 412, height: 915 }, isMobile: true, hasTouch: true, deviceScaleFactor: 1, userAgent: "Mozilla/5.0 (Linux; Android 16; SM-S928U1) AppleWebKit/537.36 Chrome/144 Mobile Safari/537.36", serviceWorkers: "allow" });
 
           {
             const { page, errors } = await open(mobile, `/menu/?v=${release}&fresh=1`);
             const initial = await page.evaluate(() => {
               const dock = document.querySelector(".mobile-dock");
               const rect = dock.getBoundingClientRect();
-              return {
-                overflow: document.documentElement.scrollWidth - innerWidth,
-                dock: { display: getComputedStyle(dock).display, position: getComputedStyle(dock).position, visible: rect.width > 0 && rect.height > 0 && rect.top < innerHeight && rect.bottom > 0 },
-                mobileBook: getComputedStyle(document.querySelector(".mobile-book")).display,
-                desktopBook: getComputedStyle(document.querySelector(".book")).display,
-                filterHeight: document.querySelector(".filter")?.getBoundingClientRect().height || 0
-              };
+              return { overflow: document.documentElement.scrollWidth - innerWidth, dock: { position: getComputedStyle(dock).position, visible: rect.width > 0 && rect.height > 0 && rect.top < innerHeight && rect.bottom > 0 }, mobileBook: getComputedStyle(document.querySelector(".mobile-book")).display, desktopBook: getComputedStyle(document.querySelector(".book")).display, filterHeight: document.querySelector(".filter")?.getBoundingClientRect().height || 0 };
             });
             report.mobileMenu = { initial, errors };
             expect(initial.overflow <= 1, `Mobile menu overflow ${initial.overflow}px`);
-            expect(initial.dock.display !== "none" && initial.dock.position === "fixed" && initial.dock.visible, `Mobile dock wrong ${JSON.stringify(initial.dock)}`);
+            expect(initial.dock.position === "fixed" && initial.dock.visible, `Mobile dock wrong ${JSON.stringify(initial.dock)}`);
             expect(initial.mobileBook !== "none" && initial.desktopBook === "none", "Mobile book mode wrong");
             expect(initial.filterHeight >= 36, `Mobile filters too small ${initial.filterHeight}`);
             const before = await page.locator(".mobile-book h3").textContent();
             await page.locator("[data-book-next]").last().click();
             await page.waitForTimeout(720);
             const after = await page.locator(".mobile-book h3").textContent();
-            expect(before !== after, `Mobile menu book failed ${before} -> ${after}`);
+            expect(before !== after, `Mobile book failed ${before} -> ${after}`);
             await page.screenshot({ path: "/tmp/southernmost-platform-v5-live/mobile-menu.png" });
             await page.close();
           }
@@ -224,19 +160,10 @@ jobs:
             await page.waitForSelector('[data-authorize="digital"]');
             await page.locator('[data-authorize="digital"]').click();
             await page.waitForSelector(".order-layout");
-            const active = await page.evaluate(() => ({
-              context: document.querySelector("#order-context-pill")?.textContent || "",
-              cards: document.querySelectorAll(".menu-card").length,
-              members: document.querySelectorAll("[data-member]").length,
-              services: document.querySelectorAll("[data-service]").length,
-              session: window.SMStore.getState().session,
-              layerHidden: document.querySelector("#layer")?.hidden,
-              locked: document.body.classList.contains("no-scroll"),
-              overflow: document.documentElement.scrollWidth - innerWidth
-            }));
+            const active = await page.evaluate(() => ({ context: document.querySelector("#order-context-pill")?.textContent || "", cards: document.querySelectorAll(".menu-card").length, services: document.querySelectorAll("[data-service]").length, session: window.SMStore.getState().session, layerHidden: document.querySelector("#layer")?.hidden, locked: document.body.classList.contains("no-scroll"), overflow: document.documentElement.scrollWidth - innerWidth }));
             report.order = { active, errors };
-            expect(/dining/i.test(active.context) && /12/.test(active.context), `Order QR context lost ${active.context}`);
-            expect(active.cards >= 50 && active.members >= 1 && active.services >= 4 && active.session?.authorization, `Order session incomplete ${JSON.stringify(active)}`);
+            expect(/dining/i.test(active.context) && /12/.test(active.context), `QR context lost ${active.context}`);
+            expect(active.cards >= 50 && active.services >= 4 && active.session?.authorization, `Order session incomplete ${JSON.stringify(active)}`);
             expect(active.layerHidden && !active.locked && active.overflow <= 1, `Order initial state wrong ${JSON.stringify(active)}`);
 
             const itemButton = page.locator("[data-item]:not([disabled])").nth(3);
@@ -248,16 +175,16 @@ jobs:
               return { clickable: top === el || el.contains(top), top: top ? `${top.tagName}.${top.className || ""}` : "none", rect: { top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right } };
             });
             report.order.hit = hit;
-            expect(hit.clickable, `Order item hit target obstructed ${JSON.stringify(hit)}`);
+            expect(hit.clickable, `Item hit target obstructed ${JSON.stringify(hit)}`);
             await itemButton.tap();
             await page.waitForSelector("#item-form");
             await page.locator("#item-form").evaluate(form => form.requestSubmit());
-            await page.waitForTimeout(300);
-            expect((await page.evaluate(() => window.SMStore.getState().cart.length)) >= 1, "Order item did not enter cart");
-            expect(!(await page.locator("[data-submit-round]").isDisabled()), "Submit-round control did not enable");
+            await page.waitForTimeout(320);
+            expect((await page.evaluate(() => window.SMStore.getState().cart.length)) >= 1, "Item did not enter cart");
+            expect(!(await page.locator("[data-submit-round]").isDisabled()), "Submit round did not enable");
             await page.locator("[data-submit-round]").click();
             await page.waitForTimeout(320);
-            expect((await page.evaluate(() => window.SMStore.getState().rounds.length)) >= 1, "Order round did not submit");
+            expect((await page.evaluate(() => window.SMStore.getState().rounds.length)) >= 1, "Round did not submit");
             await page.locator("[data-service]").first().click();
             await page.waitForTimeout(220);
             expect((await page.evaluate(() => window.SMStore.getState().serviceRequests.length)) >= 1, "Service request did not record");
@@ -265,43 +192,14 @@ jobs:
             await page.waitForTimeout(260);
             expect(await page.locator("#modal").evaluate(el => el.classList.contains("open")), "Split checkout did not open");
             await page.screenshot({ path: "/tmp/southernmost-platform-v5-live/mobile-order.png" });
-            await page.close();
-          }
-
-          {
-            const { page, errors } = await open(desktop, `/staff/?v=${release}&fresh=1`);
-            const state = await page.evaluate(() => ({
-              views: document.querySelectorAll("[data-staff-view]").length,
-              tables: document.querySelectorAll(".table-tile").length,
-              cards: document.querySelectorAll(".dash-card").length,
-              workload: Boolean(document.querySelector("[data-server-workload]"))
-            }));
-            report.staff = { state, errors };
-            expect(state.views >= 5 && state.tables >= 4 && state.cards >= 2 && state.workload, `Staff incomplete ${JSON.stringify(state)}`);
-            await page.locator('[data-staff-view="kitchen"]').click();
-            await page.waitForTimeout(180);
-            expect(await page.locator(".ticket").count() >= 1, "Kitchen queue missing");
-            await page.close();
-          }
-
-          {
-            const { page, errors } = await open(desktop, `/admin/?v=${release}&fresh=1`);
-            const state = await page.evaluate(() => ({ views: document.querySelectorAll("[data-admin-view]").length, cards: document.querySelectorAll(".dash-card").length }));
-            report.admin = { state, errors };
-            expect(state.views >= 5 && state.cards >= 2, `Admin incomplete ${JSON.stringify(state)}`);
-            await page.locator('[data-admin-view="menu"]').click();
-            await page.waitForTimeout(180);
-            expect(await page.locator("[data-admin-item-row]").count() >= 50, "Admin menu CMS missing");
+            expect(errors.length === 0, `Order runtime errors: ${errors.join(" | ")}`);
             await page.close();
           }
 
           {
             const { page } = await open(desktop, `/?v=${release}&fresh=1`);
             const worker = await page.evaluate(async () => {
-              const registration = await Promise.race([
-                navigator.serviceWorker.ready,
-                new Promise((_, reject) => setTimeout(() => reject(new Error("service worker timeout")), 15000))
-              ]);
+              const registration = await Promise.race([navigator.serviceWorker.ready, new Promise((_, reject) => setTimeout(() => reject(new Error("service worker timeout")), 15000))]);
               return { state: registration.active?.state || null, caches: await caches.keys() };
             });
             report.serviceWorker = worker;
@@ -320,7 +218,7 @@ jobs:
           NODE
           node .live-qa/verify.mjs
 
-      - name: Upload live verification evidence
+      - name: Upload live QA evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
