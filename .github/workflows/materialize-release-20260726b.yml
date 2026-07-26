@@ -22,26 +22,28 @@ jobs:
   materialize:
     runs-on: ubuntu-latest
     steps:
-      - name: Download and verify staged release archive
+      - name: Checkout staged release branch
+        uses: actions/checkout@v4
+        with:
+          ref: deploy/production-polish-20260726b
+          fetch-depth: 0
+          show-progress: false
+
+      - name: Reconstruct and verify staged release archive
         shell: bash
         run: |
           set -euo pipefail
-          root="https://raw.githubusercontent.com/guardian-prodigy/southernmost-bar-grille/refs/heads/deploy/production-polish-20260726b/.deploy"
-          original="$root/release-20260726b"
-          fixed="$root/release-20260726b-fix"
+          original=".deploy/release-20260726b"
+          fixed=".deploy/release-20260726b-fix"
+          test -d "$original"
+          test -d "$fixed"
           rm -rf /tmp/southernmost-parts
           mkdir -p /tmp/southernmost-parts
 
-          curl -fsSL --retry 3 --connect-timeout 20 --max-time 120 "$original/part-00" -o /tmp/southernmost-parts/part-00
-          for segment in 00 01 02; do
-            curl -fsSL --retry 3 --connect-timeout 20 --max-time 120 "$fixed/part01-$segment" -o "/tmp/southernmost-parts/part01-$segment"
-          done
-          cat /tmp/southernmost-parts/part01-* > /tmp/southernmost-parts/part-01
-          curl -fsSL --retry 3 --connect-timeout 20 --max-time 120 "$original/part-02" -o /tmp/southernmost-parts/part-02
-          for segment in 00 01 02; do
-            curl -fsSL --retry 3 --connect-timeout 20 --max-time 120 "$fixed/part03-$segment" -o "/tmp/southernmost-parts/part03-$segment"
-          done
-          cat /tmp/southernmost-parts/part03-* > /tmp/southernmost-parts/part-03
+          cp "$original/part-00" /tmp/southernmost-parts/part-00
+          cat "$fixed/part01-00" "$fixed/part01-01" "$fixed/part01-02" > /tmp/southernmost-parts/part-01
+          cp "$original/part-02" /tmp/southernmost-parts/part-02
+          cat "$fixed/part03-00" "$fixed/part03-01" "$fixed/part03-02" > /tmp/southernmost-parts/part-03
 
           test "$(wc -c < /tmp/southernmost-parts/part-00)" -eq 18000
           test "$(wc -c < /tmp/southernmost-parts/part-01)" -eq 18000
@@ -61,7 +63,6 @@ jobs:
           test "$actual" = "3d4b22a89b9a67791dc9f5bb98c718a1b29ed52bd7987a36d291a94db37c7980"
 
           tar -tzf /tmp/southernmost-release.tar.gz > /tmp/release-files.txt
-          echo "release file count: $(wc -l < /tmp/release-files.txt)"
           test "$(wc -l < /tmp/release-files.txt)" -eq 15
           grep -qx 'index.html' /tmp/release-files.txt
           grep -qx 'app.js' /tmp/release-files.txt
@@ -71,13 +72,6 @@ jobs:
           grep -qx 'admin/qr-kit.html' /tmp/release-files.txt
           grep -qx 'qr/lounge-04.html' /tmp/release-files.txt
           grep -qx 'assets/qr-table-12.png' /tmp/release-files.txt
-
-      - name: Checkout staged release branch
-        uses: actions/checkout@v4
-        with:
-          ref: deploy/production-polish-20260726b
-          fetch-depth: 0
-          show-progress: false
 
       - name: Materialize release source
         shell: bash
