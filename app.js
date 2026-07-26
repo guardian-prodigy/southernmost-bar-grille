@@ -52,6 +52,33 @@
   const cartDrawer = $("#cart-drawer");
   const drawerBackdrop = $("#drawer-backdrop");
   const toastRegion = $("#toast-region");
+  const guidePanel = $("#guide-panel");
+  const guideBackdrop = $("#guide-backdrop");
+
+  const anyLayerOpen = () => Boolean(
+    (!modal.hidden && modal.classList.contains("is-open")) ||
+    cartDrawer.classList.contains("is-open") ||
+    guidePanel?.classList.contains("is-open")
+  );
+  const syncScrollLock = () => document.body.classList.toggle("no-scroll", anyLayerOpen());
+  window.SouthernmostSyncScrollLock = syncScrollLock;
+
+  function resetTransientLayers() {
+    modal.classList.remove("is-open");
+    modal.setAttribute("aria-hidden", "true");
+    modal.hidden = true;
+    drawerBackdrop.classList.remove("is-open", "is-visible");
+    drawerBackdrop.hidden = true;
+    cartDrawer.classList.remove("is-open");
+    cartDrawer.setAttribute("aria-hidden", "true");
+    guideBackdrop?.classList.remove("is-open", "is-visible");
+    if (guideBackdrop) guideBackdrop.hidden = true;
+    guidePanel?.classList.remove("is-open");
+    guidePanel?.setAttribute("aria-hidden", "true");
+    syncScrollLock();
+  }
+  resetTransientLayers();
+  addEventListener("pageshow", (event) => { if (event.persisted) resetTransientLayers(); });
 
   function saveSession() {
     if (session && tableMode) localStorage.setItem(sessionStorageKey, JSON.stringify(session));
@@ -141,30 +168,38 @@
     setTimeout(() => { element.classList.add("is-leaving"); setTimeout(() => element.remove(), 260); }, 1900);
   }
   function openModal(markup, afterOpen) {
+    closeCart(true);
+    dispatchEvent(new CustomEvent("southernmost:close-guide", { detail: { immediate: true } }));
     modalContent.innerHTML = markup;
     modal.hidden = false;
     modal.setAttribute("aria-hidden", "false");
-    document.body.classList.add("no-scroll");
-    requestAnimationFrame(() => modal.classList.add("is-open"));
+    requestAnimationFrame(() => { modal.classList.add("is-open"); syncScrollLock(); });
     afterOpen?.();
   }
-  function closeModal() {
+  function closeModal(immediate = false) {
     modal.classList.remove("is-open");
     modal.setAttribute("aria-hidden", "true");
-    setTimeout(() => { modal.hidden = true; document.body.classList.remove("no-scroll"); }, 240);
+    const finish = () => { modal.hidden = true; syncScrollLock(); };
+    if (immediate) finish(); else setTimeout(finish, 240);
   }
   function openCart() {
+    closeModal(true);
+    dispatchEvent(new CustomEvent("southernmost:close-guide", { detail: { immediate: true } }));
     renderCart();
     drawerBackdrop.hidden = false;
     cartDrawer.setAttribute("aria-hidden", "false");
-    document.body.classList.add("no-scroll");
-    requestAnimationFrame(() => { drawerBackdrop.classList.add("is-open"); cartDrawer.classList.add("is-open"); });
+    requestAnimationFrame(() => {
+      drawerBackdrop.classList.add("is-open");
+      cartDrawer.classList.add("is-open");
+      syncScrollLock();
+    });
   }
-  function closeCart() {
-    drawerBackdrop.classList.remove("is-open");
+  function closeCart(immediate = false) {
+    drawerBackdrop.classList.remove("is-open", "is-visible");
     cartDrawer.classList.remove("is-open");
     cartDrawer.setAttribute("aria-hidden", "true");
-    setTimeout(() => { drawerBackdrop.hidden = true; document.body.classList.remove("no-scroll"); }, 240);
+    const finish = () => { drawerBackdrop.hidden = true; syncScrollLock(); };
+    if (immediate) finish(); else setTimeout(finish, 240);
   }
   document.addEventListener("keydown", (event) => {
     if (event.key !== "Escape") return;
@@ -178,6 +213,8 @@
     if (event.target.closest("[data-scroll-order]")) document.querySelector("#order")?.scrollIntoView({ behavior: "smooth" });
   });
   drawerBackdrop.addEventListener("click", closeCart);
+  addEventListener("southernmost:close-cart", (event) => closeCart(Boolean(event.detail?.immediate)));
+  addEventListener("southernmost:close-modal", (event) => closeModal(Boolean(event.detail?.immediate)));
 
   $$('[data-directions-link]').forEach((link) => { link.href = DATA.site.directionsUrl; });
   $$('[data-delivery-link]').forEach((link) => {
@@ -734,17 +771,13 @@
   renderCart();
   setInterval(() => { if (session?.orders?.length) renderSessionState(); }, 7000);
 
-  if ("serviceWorker" in navigator) {
-      addEventListener("load", async () => {
-        try {
-          const registrations = await navigator.serviceWorker.getRegistrations();
-          await Promise.all(registrations.map((registration) => registration.unregister()));
-          if ("caches" in window) {
-            const keys = await caches.keys();
-            await Promise.all(keys.filter((key) => key.startsWith("southernmost-")).map((key) => caches.delete(key)));
-          }
-        } catch {}
-      }, { once: true });
-    }
-  })();
+  if ("serviceWorker" in navigator && location.protocol !== "file:") {
+    addEventListener("load", async () => {
+      try {
+        const registration = await navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" });
+        await registration.update();
+      } catch {}
+    }, { once: true });
+  }
+})();
   

@@ -205,24 +205,28 @@
 
   if (panel && backdrop && messages) {
     const openGuide = () => {
+      dispatchEvent(new CustomEvent("southernmost:close-cart", { detail: { immediate: true } }));
+      dispatchEvent(new CustomEvent("southernmost:close-modal", { detail: { immediate: true } }));
       backdrop.hidden = false;
       requestAnimationFrame(() => {
         backdrop.classList.add("is-open");
         panel.classList.add("is-open");
         panel.setAttribute("aria-hidden", "false");
+        window.SouthernmostSyncScrollLock?.();
       });
-      document.body.classList.add("no-scroll");
       setTimeout(() => guideInput?.focus(), 320);
     };
-    const closeGuide = () => {
-      backdrop.classList.remove("is-open");
+    const closeGuide = (immediate = false) => {
+      backdrop.classList.remove("is-open", "is-visible");
       panel.classList.remove("is-open");
       panel.setAttribute("aria-hidden", "true");
-      setTimeout(() => { backdrop.hidden = true; document.body.classList.remove("no-scroll"); }, 300);
+      const finish = () => { backdrop.hidden = true; window.SouthernmostSyncScrollLock?.(); };
+      if (immediate) finish(); else setTimeout(finish, 300);
     };
     $$('[data-open-guide]').forEach((button) => button.addEventListener("click", openGuide));
     $$('[data-close-guide]').forEach((button) => button.addEventListener("click", closeGuide));
-    backdrop.addEventListener("click", closeGuide);
+    backdrop.addEventListener("click", () => closeGuide());
+    addEventListener("southernmost:close-guide", (event) => closeGuide(Boolean(event.detail?.immediate)));
     document.addEventListener("keydown", (event) => { if (event.key === "Escape" && panel.classList.contains("is-open")) closeGuide(); });
 
     const appendMessage = (role, html) => {
