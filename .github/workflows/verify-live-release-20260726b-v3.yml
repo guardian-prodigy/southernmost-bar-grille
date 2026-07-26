@@ -1,0 +1,232 @@
+name: Verify live Southernmost release 20260726b v3
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/verify-live-release-20260726b-v3.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-live-southernmost-20260726b-v3
+  cancel-in-progress: true
+
+jobs:
+  verify-live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - name: Verify public production files
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://guardian-prodigy.github.io/southernmost-bar-grille"
+          ready=""
+          for attempt in $(seq 1 45); do
+            echo "Public release check ${attempt}/45"
+            if curl -fsSL "$base/?v=20260726b&fresh=1" -o /tmp/index.html \
+              && grep -q 'data-release="20260726b"' /tmp/index.html \
+              && grep -q 'upgrade.css?v=20260726b' /tmp/index.html \
+              && grep -q 'app.js?v=20260726b' /tmp/index.html \
+              && grep -q 'three-scenes-v2.js?v=20260726b' /tmp/index.html \
+              && ! grep -qi 'hotfix\.css\|hotfix\.js\|atob(' /tmp/index.html \
+              && curl -fsSL "$base/upgrade.css?v=20260726b" -o /tmp/upgrade.css \
+              && grep -q 'Production interaction guardrails — 20260726b' /tmp/upgrade.css \
+              && curl -fsSL "$base/app.js?v=20260726b" -o /tmp/app.js \
+              && grep -q 'SouthernmostSyncScrollLock' /tmp/app.js \
+              && grep -q 'serviceWorker.register("./sw.js"' /tmp/app.js \
+              && curl -fsSL "$base/sw.js?v=20260726b" -o /tmp/sw.js \
+              && grep -q 'southernmost-v16-20260726b' /tmp/sw.js \
+              && curl -fsSL "$base/qr/table-12.html?v=20260726b" -o /tmp/qr.html \
+              && grep -q 'table=12' /tmp/qr.html \
+              && grep -q 'zone=dining' /tmp/qr.html \
+              && curl -fsSL "$base/assets/qr-table-12.png?v=20260726b" -o /tmp/qr.png \
+              && test "$(wc -c < /tmp/qr.png)" -gt 3000; then
+              ready="yes"
+              break
+            fi
+            sleep 10
+          done
+          test -n "$ready"
+          echo "Public files verified."
+
+      - name: Prepare browser QA
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install browser driver
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --ignore-scripts playwright-core@1.55.0
+          chrome="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          test -n "$chrome"
+          echo "CHROME_PATH=$chrome" >> "$GITHUB_ENV"
+          "$chrome" --version
+
+      - name: Run real desktop and Android-sized interaction tests
+        shell: bash
+        run: |
+          set -uo pipefail
+          mkdir -p .live-qa /tmp/southernmost-live-qa
+          cat > .live-qa/verify.mjs <<'NODE'
+          import { chromium } from "playwright-core";
+          import fs from "node:fs";
+
+          const base = "https://guardian-prodigy.github.io/southernmost-bar-grille";
+          const release = "20260726b";
+          const report = { failures: [], desktop: {}, mobile: {}, qr: {}, serviceWorker: {} };
+          const check = (condition, message) => { if (!condition) report.failures.push(message); };
+          const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH, headless: true, args: ["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"] });
+
+          async function visit(context, url) {
+            const page = await context.newPage();
+            const errors = [];
+            page.on("pageerror", error => errors.push(error.message));
+            page.on("response", response => {
+              if (response.url().startsWith(base) && response.status() >= 400) errors.push(`HTTP ${response.status()} ${response.url()}`);
+            });
+            await page.goto(url, { waitUntil: "domcontentloaded", timeout: 120000 });
+            await page.waitForSelector(`body[data-release="${release}"]`, { timeout: 30000 });
+            await page.waitForTimeout(3000);
+            return { page, errors };
+          }
+
+          try {
+            const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, serviceWorkers: "allow" });
+            const { page, errors } = await visit(context, `${base}/?v=${release}&fresh=1`);
+            const state = await page.evaluate(() => {
+              const info = selector => { const el = document.querySelector(selector); const style = getComputedStyle(el); return { hidden: el.hidden, display: style.display, opacity: style.opacity, visibility: style.visibility }; };
+              return {
+                release: document.body.dataset.release,
+                overflow: document.documentElement.scrollWidth - innerWidth,
+                locked: document.body.classList.contains("no-scroll"),
+                mainFilter: getComputedStyle(document.querySelector("#main")).filter,
+                drawer: info("#drawer-backdrop"), guide: info("#guide-backdrop"), modal: info("#flow-modal"),
+                cards: document.querySelectorAll(".order-card").length,
+                filters: document.querySelectorAll("#menu-filters button").length,
+                canvases: document.querySelectorAll("canvas").length,
+                book: Boolean(document.querySelector("#menu-book-ui")),
+                heroHeight: document.querySelector(".hero__copy")?.getBoundingClientRect().height || 0
+              };
+            });
+            report.desktop = { state, errors };
+            check(state.release === release, "Desktop release mismatch");
+            check(state.overflow <= 1, `Desktop horizontal overflow ${state.overflow}px`);
+            check(!state.locked && state.mainFilter === "none", `Desktop initial lock/filter ${state.locked}/${state.mainFilter}`);
+            check(state.drawer.hidden && state.drawer.display === "none", `Desktop cart backdrop visible ${JSON.stringify(state.drawer)}`);
+            check(state.guide.hidden && state.guide.display === "none", `Desktop Guide backdrop visible ${JSON.stringify(state.guide)}`);
+            check(state.modal.hidden && state.modal.display === "none", `Desktop modal visible ${JSON.stringify(state.modal)}`);
+            check(state.cards >= 12 && state.filters >= 10 && state.canvases >= 3 && state.book && state.heroHeight > 0, `Desktop render incomplete ${JSON.stringify(state)}`);
+            check(errors.length === 0, `Desktop runtime errors: ${errors.join(" | ")}`);
+            await page.screenshot({ path: "/tmp/southernmost-live-qa/desktop.png" });
+            await context.close();
+          } catch (error) { report.failures.push(`Desktop test exception: ${error.stack || error}`); }
+
+          try {
+            const context = await browser.newContext({ viewport: { width: 412, height: 915 }, isMobile: true, hasTouch: true, deviceScaleFactor: 1, userAgent: "Mozilla/5.0 (Linux; Android 16; SM-S928U1) AppleWebKit/537.36 Chrome/144 Mobile Safari/537.36", serviceWorkers: "allow" });
+            const { page, errors } = await visit(context, `${base}/?v=${release}&fresh=1`);
+            const initial = await page.evaluate(() => {
+              const dock = document.querySelector(".mobile-action-bar"); const rect = dock.getBoundingClientRect();
+              const firstFilter = document.querySelector("#menu-filters button"); const filterStyle = getComputedStyle(firstFilter);
+              return {
+                release: document.body.dataset.release,
+                overflow: document.documentElement.scrollWidth - innerWidth,
+                locked: document.body.classList.contains("no-scroll"),
+                drawerHidden: document.querySelector("#drawer-backdrop").hidden,
+                guideHidden: document.querySelector("#guide-backdrop").hidden,
+                dock: { display: getComputedStyle(dock).display, position: getComputedStyle(dock).position, visible: rect.width > 0 && rect.height > 0 && rect.top < innerHeight && rect.bottom > 0 },
+                floatingCart: getComputedStyle(document.querySelector(".floating-cart")).display,
+                guideLauncher: getComputedStyle(document.querySelector(".guide-launcher")).display,
+                mobileBook: getComputedStyle(document.querySelector("#mobile-book-reader")).display,
+                heroHeight: document.querySelector(".hero__copy")?.getBoundingClientRect().height || 0,
+                filter: { radius: filterStyle.borderRadius, height: firstFilter.getBoundingClientRect().height }
+              };
+            });
+            report.mobile.initial = initial;
+            report.mobile.errors = errors;
+            check(initial.release === release, "Mobile release mismatch");
+            check(initial.overflow <= 1, `Mobile horizontal overflow ${initial.overflow}px`);
+            check(!initial.locked && initial.drawerHidden && initial.guideHidden, `Mobile loaded with stuck overlay ${JSON.stringify(initial)}`);
+            check(initial.dock.visible && initial.dock.position === "fixed", `Mobile dock unstable ${JSON.stringify(initial.dock)}`);
+            check(initial.floatingCart === "none" && initial.guideLauncher === "none", `Duplicate mobile controls ${initial.floatingCart}/${initial.guideLauncher}`);
+            check(initial.mobileBook !== "none" && initial.heroHeight > 0, `Mobile hero/book hidden ${JSON.stringify(initial)}`);
+            check(initial.filter.radius !== "0px" && initial.filter.height >= 36, `Mobile filters unstyled ${JSON.stringify(initial.filter)}`);
+
+            await page.evaluate(() => scrollTo(0, Math.min(document.body.scrollHeight - innerHeight, 2400)));
+            await page.waitForTimeout(450);
+            const dockAfterScroll = await page.evaluate(() => { const el = document.querySelector(".mobile-action-bar"); const rect = el.getBoundingClientRect(); return { position: getComputedStyle(el).position, visible: rect.top < innerHeight && rect.bottom > 0 }; });
+            report.mobile.dockAfterScroll = dockAfterScroll;
+            check(dockAfterScroll.position === "fixed" && dockAfterScroll.visible, `Mobile dock disappeared after scroll ${JSON.stringify(dockAfterScroll)}`);
+
+            await page.locator("#menu-book").scrollIntoViewIfNeeded();
+            const before = (await page.locator("#mobile-book-label").textContent())?.trim();
+            await page.locator("#mobile-book-next").click({ timeout: 10000 });
+            await page.waitForTimeout(750);
+            const after = (await page.locator("#mobile-book-label").textContent())?.trim();
+            report.mobile.book = { before, after };
+            check(Boolean(before && after && before !== after), `Mobile menu book failed ${before} -> ${after}`);
+
+            await page.locator(".mobile-action-bar [data-open-guide]").click({ timeout: 10000 });
+            await page.waitForTimeout(400);
+            const guideOpen = await page.evaluate(() => ({ open: document.querySelector("#guide-panel").classList.contains("is-open"), lock: document.body.classList.contains("no-scroll"), hidden: document.querySelector("#guide-backdrop").hidden }));
+            await page.locator("[data-close-guide]").click({ timeout: 10000 });
+            await page.waitForTimeout(420);
+            const guideClosed = await page.evaluate(() => ({ open: document.querySelector("#guide-panel").classList.contains("is-open"), lock: document.body.classList.contains("no-scroll"), hidden: document.querySelector("#guide-backdrop").hidden }));
+            report.mobile.guide = { guideOpen, guideClosed };
+            check(guideOpen.open && guideOpen.lock && !guideOpen.hidden, `Guide open failed ${JSON.stringify(guideOpen)}`);
+            check(!guideClosed.open && !guideClosed.lock && guideClosed.hidden, `Guide close failed ${JSON.stringify(guideClosed)}`);
+
+            await page.locator(".mobile-action-bar [data-open-cart]").click({ timeout: 10000 });
+            await page.waitForTimeout(350);
+            const cartOpen = await page.evaluate(() => ({ open: document.querySelector("#cart-drawer").classList.contains("is-open"), lock: document.body.classList.contains("no-scroll"), hidden: document.querySelector("#drawer-backdrop").hidden }));
+            await page.locator("[data-close-cart]").click({ timeout: 10000 });
+            await page.waitForTimeout(380);
+            const cartClosed = await page.evaluate(() => ({ open: document.querySelector("#cart-drawer").classList.contains("is-open"), lock: document.body.classList.contains("no-scroll"), hidden: document.querySelector("#drawer-backdrop").hidden }));
+            report.mobile.cart = { cartOpen, cartClosed };
+            check(cartOpen.open && cartOpen.lock && !cartOpen.hidden, `Cart open failed ${JSON.stringify(cartOpen)}`);
+            check(!cartClosed.open && !cartClosed.lock && cartClosed.hidden, `Cart close failed ${JSON.stringify(cartClosed)}`);
+            check(errors.length === 0, `Mobile runtime errors: ${errors.join(" | ")}`);
+            await page.screenshot({ path: "/tmp/southernmost-live-qa/mobile.png" });
+
+            await page.goto(`${base}/qr/table-12.html?v=${release}`, { waitUntil: "domcontentloaded", timeout: 120000 });
+            await page.waitForURL(url => url.searchParams.get("table") === "12" && url.searchParams.get("zone") === "dining", { timeout: 30000 });
+            await page.waitForTimeout(1200);
+            const qr = await page.evaluate(() => ({ release: document.body.dataset.release, url: location.href, indicator: document.querySelector("#order-mode-indicator")?.textContent?.trim() || "" }));
+            report.qr = qr;
+            check(qr.release === release && qr.url.includes("table=12") && qr.url.includes("zone=dining"), `QR context failed ${JSON.stringify(qr)}`);
+            check(/table|ordering/i.test(qr.indicator), `QR ordering indicator failed ${JSON.stringify(qr)}`);
+
+            try {
+              const worker = await page.evaluate(async () => {
+                const registration = await Promise.race([navigator.serviceWorker.ready, new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 15000))]);
+                return { state: registration.active?.state || null, caches: await caches.keys() };
+              });
+              report.serviceWorker = worker;
+              check(worker.state === "activated", `Service worker not activated ${JSON.stringify(worker)}`);
+              check(worker.caches.includes("southernmost-v16-20260726b"), `Release cache missing ${JSON.stringify(worker.caches)}`);
+            } catch (error) { report.failures.push(`Service worker test exception: ${error.message}`); }
+            await context.close();
+          } catch (error) { report.failures.push(`Mobile test exception: ${error.stack || error}`); }
+
+          await browser.close();
+          fs.writeFileSync("/tmp/southernmost-live-qa/report.json", JSON.stringify(report, null, 2));
+          console.log("LIVE_QA_REPORT_START");
+          console.log(JSON.stringify(report, null, 2));
+          console.log("LIVE_QA_REPORT_END");
+          if (report.failures.length) process.exitCode = 1;
+          NODE
+          node .live-qa/verify.mjs
+
+      - name: Upload live QA evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: southernmost-live-qa-20260726b-v3
+          path: /tmp/southernmost-live-qa
+          if-no-files-found: warn
+          retention-days: 3
