@@ -79,6 +79,11 @@ export function MenuExplorer() {
           <div className="menu-book-stage">
             <div className="book-ambient book-ambient-one" aria-hidden="true" />
             <div className="book-ambient book-ambient-two" aria-hidden="true" />
+            <div className="stage-palm stage-palm-left" aria-hidden="true" />
+            <div className="stage-palm stage-palm-right" aria-hidden="true" />
+            <p className="stage-coordinates" aria-hidden="true">
+              26.7153° N · 80.0534° W
+            </p>
             <div
               className={`menu-book turn-${turn.direction}`}
               key={turn.key}
@@ -87,6 +92,7 @@ export function MenuExplorer() {
               <div className="book-cover-edge" aria-hidden="true" />
               <section className="book-page book-page-left">
                 <div className="book-page-texture" aria-hidden="true" />
+                <span className="book-page-palm" aria-hidden="true">✦</span>
                 <span className="book-kicker">
                   Chapter {String(pageIndex + 1).padStart(2, "0")}
                 </span>
@@ -102,8 +108,12 @@ export function MenuExplorer() {
               <section className="book-page book-page-right">
                 <div className="book-page-texture" aria-hidden="true" />
                 <div className="book-page-rule">
-                  <span>{currentPage.name}</span>
+                  <span>Southernmost · {currentPage.name}</span>
                   <span>{pageIndex + 1} / {menuCategories.length}</span>
+                </div>
+                <div className="book-page-heading">
+                  <small>Coastal · Caribbean · American</small>
+                  <strong>{currentPage.name}</strong>
                 </div>
                 <div className="book-items">
                   {currentPage.items.map((item) => (

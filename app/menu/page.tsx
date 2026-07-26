@@ -13,23 +13,26 @@ export default function MenuPage() {
     <main id="main-content">
       <section className="page-hero menu-page-hero">
         <div className="page-hero-image" aria-hidden="true" />
+        <div className="menu-hero-sun" aria-hidden="true" />
+        <div className="menu-hero-leaf menu-hero-leaf-one" aria-hidden="true" />
+        <div className="menu-hero-leaf menu-hero-leaf-two" aria-hidden="true" />
         <div className="shell page-hero-grid">
           <div>
-            <p className="eyebrow light">Coastal · Caribbean · American</p>
+            <p className="eyebrow light">An interactive island menu</p>
             <h1>
-              The full <em>island menu.</em>
+              Open a taste of <em>South Florida.</em>
             </h1>
             <p>
-              Shareable starters, fresh seafood, signature plates, cold drinks
+              Turn through coastal plates, Caribbean signatures, cold drinks
               and the favorites that keep West Palm coming back.
             </p>
           </div>
           <aside>
-            <span>QR-ready menu</span>
-            <strong>Scan. Browse. Order.</strong>
+            <span>Not another menu grid</span>
+            <strong>Turn it. Taste it. Make it yours.</strong>
             <p>
-              This page is designed for quick table access on any phone—no app
-              or account required.
+              Explore the dimensional menu book, add favorites from each page,
+              or switch to the fast searchable list whenever you prefer.
             </p>
             <Link className="text-link light-link" href="/order">
               Start an order <span aria-hidden="true">→</span>

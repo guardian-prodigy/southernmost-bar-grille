@@ -99,64 +99,68 @@ export default function Home() {
       <section className="hero">
         <div className="hero-image" aria-hidden="true" />
         <div className="hero-shade" aria-hidden="true" />
+        <div className="hero-sun" aria-hidden="true" />
+        <div className="hero-palm-shadow palm-shadow-one" aria-hidden="true" />
+        <div className="hero-palm-shadow palm-shadow-two" aria-hidden="true" />
         <div className="shell hero-grid">
           <div className="hero-copy">
-            <p className="eyebrow light">West Palm Beach · Florida</p>
+            <p className="eyebrow light">West Palm&apos;s island room</p>
             <h1>
-              Your island
-              <br />
-              <em>escape,</em> closer.
+              Where West Palm
+              <br />goes <em>island.</em>
             </h1>
             <p className="hero-lead">
-              Fresh coastal plates, premium steaks, handcrafted cocktails,
-              billiards and live music—served with genuine island hospitality.
+              Coastal fire, handcrafted cocktails and late-night tropical
+              energy—wrapped in one unforgettable neighborhood escape.
             </p>
             <div className="button-row">
               <Link className="button sun" href="/menu">
-                Explore the menu <span aria-hidden="true">↗</span>
+                Open the 3D menu <span aria-hidden="true">↗</span>
               </Link>
               <Link className="button glass" href="/visit">
-                Plan your visit
+                Find the island
               </Link>
             </div>
             <div className="hero-proof" aria-label="Southernmost highlights">
-              <span>Live music</span>
-              <span>Billiards nightly</span>
-              <span>Happy hour 5–7</span>
+              <span>✦ Coastal kitchen</span>
+              <span>✦ Live music</span>
+              <span>✦ Happy hour 5–7</span>
             </div>
           </div>
 
-          <aside className="tonight-card" aria-label="Tonight at Southernmost">
-            <div className="tonight-top">
-              <span className="live-dot" />
-              Tonight at Southernmost
-            </div>
-            <div className="tonight-feature">
-              <p>Stay for golden hour</p>
-              <strong>Cold drinks. Warm nights.</strong>
-              <span>
-                Happy hour daily from 5–7 PM, followed by billiards and island
-                energy late into the evening.
+          <aside className="hero-visual" aria-label="Explore Southernmost">
+            <div className="hero-book-glow" aria-hidden="true" />
+            <Link className="hero-menu-book" href="/menu">
+              <span className="hero-book-pages" aria-hidden="true" />
+              <span className="hero-book-spine" aria-hidden="true" />
+              <span className="hero-book-cover">
+                <span className="hero-book-kicker">The taste of island time</span>
+                <span className="hero-book-brand">Southernmost</span>
+                <span className="hero-book-subbrand">
+                  Coastal Kitchen · Bar · Island Vibes
+                </span>
+                <span className="hero-book-rule" />
+                <strong>MENU</strong>
+                <small>West Palm Beach · Florida</small>
               </span>
+            </Link>
+            <div className="hero-cocktail-card">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/assets/cocktails.webp" alt="" />
+              <span>Signature sip</span>
+              <strong>Southernmost Sunset</strong>
             </div>
-            <div className="tonight-meta">
+            <div className="hero-night-card">
+              <span className="live-dot" />
               <div>
-                <small>Mon–Thu</small>
-                <b>11 AM–11 PM</b>
-              </div>
-              <div>
-                <small>Fri–Sun</small>
-                <b>11 AM–2 AM</b>
+                <small>Tonight</small>
+                <strong>Golden hour into island night.</strong>
               </div>
             </div>
-            <a
-              className="text-link light-link"
-              href="https://www.google.com/maps/search/?api=1&query=4449+Okeechobee+Blvd+West+Palm+Beach+FL+33417"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Get directions <span aria-hidden="true">→</span>
-            </a>
+            <span className="hero-seal" aria-hidden="true">
+              <b>SM</b>
+              <small>WEST PALM</small>
+            </span>
           </aside>
         </div>
         <div className="marquee" aria-hidden="true">
