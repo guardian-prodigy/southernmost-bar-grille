@@ -39,7 +39,8 @@ test("renders development metadata and primary contact details", async () => {
   );
   const html = await response.text();
   assert.match(html, developmentPreviewMeta);
-  assert.match(html, /Where West Palm/);
+  assert.match(html, /Coastal plates/);
+  assert.match(html, /The neighborhood bar took a trip/);
   assert.match(html, /\+1 \(727\) 910-6118/);
   assert.match(html, /AJL WebCraft/);
 });
@@ -48,7 +49,8 @@ test("renders the complete public menu route", async () => {
   const response = await fetchRoute("/menu");
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /The Southernmost menu book/);
+  assert.match(html, /A taste of/);
+  assert.match(html, /Menu folio/);
   assert.match(html, /Conch Fritters/);
   assert.match(html, /Jerk Lamb Chops/);
   assert.match(html, /Tropical Cocktails/);
