@@ -1,5 +1,0 @@
-User-agent: *
-Allow: /
-Disallow: /staff/
-Disallow: /admin/
-Sitemap: https://guardian-prodigy.github.io/southernmost-bar-grille/sitemap.xml

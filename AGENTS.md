@@ -1,33 +1,38 @@
-# AGENTS.md
+# Southernmost implementation rules
 
 ## Mission
 
-Maintain and productionize the Southernmost Bar & Grille website without flattening its visual identity or interaction quality.
+Maintain and productionize the Southernmost Bar & Grille guest website without flattening its tropical coastal identity or introducing unverified business claims.
 
 ## Non-negotiables
 
 1. Preserve the tropical coastal palette, editorial typography and premium nightlife tone.
 2. Keep table ordering locked unless a valid Southernmost QR/table context is present.
-3. Keep public menu browsing available without requiring an account.
+3. Keep the complete public menu available without an account.
 4. Maintain keyboard navigation, focus visibility, reduced-motion support and responsive layouts.
-5. Never hardcode real payment credentials, API secrets, full card data or customer records.
-6. Treat menu art supplied by the client as the current menu source unless an approved structured menu replaces it.
-7. Do not publish unverified phone numbers, email addresses, social links, delivery listing URLs or event dates.
+5. Never hardcode payment credentials, API secrets, card data or customer records.
+6. Treat client-supplied menu art and approved structured menu data as the menu source.
+7. Do not publish unverified emails, social links, delivery URLs, review scores, performer names or event dates.
 8. Keep AJL WebCraft attribution linked to https://ajlwebcraft.com.
+9. Make ordering and private-event data boundaries explicit; do not imply that a local-only interaction was transmitted.
+10. Keep +1 (727) 910-6118 available in the footer and primary contact surfaces.
 
-## Before committing
+## Before publishing
 
 ```bash
-npm run check
+npm run lint
+npm run test
 ```
 
-Manually test:
+Manually verify:
 
-- Public read-only menu
-- QR route and table verification
-- Open tab and code 2468
-- Item modifiers, cart and round submission
-- Server request, tip and closeout
-- Page-turning menu on mouse, touch and keyboard
-- Terms, privacy and accessibility links
-- 375px, 768px, 1440px and 1920px widths
+- Homepage navigation and conversion paths
+- Public menu search and category filters
+- Add, decrement, remove and clear cart behavior
+- Pickup order review and copy action
+- Locked dine-in state without QR context
+- Verified QR entry and table context preservation
+- Private-event brief builder
+- Phone, map and directions links
+- Terms, privacy and accessibility routes
+- Mobile, tablet and desktop layouts
