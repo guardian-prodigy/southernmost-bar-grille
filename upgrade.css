@@ -336,3 +336,56 @@
   .menu-art-card > span { padding:18px; }
   .menu-art-card strong { font-size:19px; }
 }
+
+/* Production interaction guardrails — 20260726b */
+[hidden] { display: none !important; }
+html, body { max-width: 100%; overflow-x: clip; }
+.drawer-backdrop,
+.guide-backdrop,
+.modal {
+  visibility: hidden !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+.drawer-backdrop.is-open,
+.drawer-backdrop.is-visible {
+  visibility: visible !important;
+  pointer-events: auto !important;
+  opacity: 1 !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+  backdrop-filter: blur(6px) !important;
+}
+.guide-backdrop.is-open {
+  visibility: visible !important;
+  pointer-events: auto !important;
+  opacity: 1 !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+  backdrop-filter: blur(4px) !important;
+}
+.modal.is-open {
+  visibility: visible !important;
+  pointer-events: auto !important;
+  opacity: 1 !important;
+}
+.guide-panel:not(.is-open),
+.cart-drawer:not(.is-open) { pointer-events: none !important; }
+body:not(.no-scroll),
+body:not(.no-scroll) #main { -webkit-filter: none !important; filter: none !important; }
+.close-button .ui-icon { width: 1.15rem; height: 1.15rem; stroke-width: 2.2; }
+.cart-empty__mark { display:grid; place-items:center; width:4.5rem; height:4.5rem; margin:0 auto 1rem; border-radius:50%; background:rgba(255,107,74,.12); color:var(--coral); }
+.cart-empty__mark .ui-icon { width:2rem; height:2rem; }
+.billiards-visual, #billiards-canvas { -webkit-user-select:none; user-select:none; touch-action:none; cursor:grab; }
+.billiards-visual:active, #billiards-canvas:active { cursor:grabbing; }
+@media (max-width: 900px) {
+  [data-reveal], [data-reveal].is-visible {
+    opacity:1 !important; visibility:visible !important; transform:none !important;
+    -webkit-filter:none !important; filter:none !important; animation:none !important; transition:none !important;
+  }
+  .mobile-action-bar { opacity:1 !important; visibility:visible !important; transform:none !important; animation:none !important; transition:none !important; position:fixed !important; }
+  .guide-launcher, .floating-cart { display:none !important; }
+  .hero__copy, .hero__portal, .hero-sign-card, .mobile-book-reader, .mobile-book-shell {
+    opacity:1 !important; visibility:visible !important; -webkit-filter:none !important; filter:none !important;
+  }
+}
