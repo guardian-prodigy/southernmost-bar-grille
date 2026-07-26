@@ -5,13 +5,17 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/materialize-release-20260726b.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/APPLY_RELEASE_20260726B"
   workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: southernmost-materialize-20260726b
+  group: southernmost-materialize-20260726b-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: false
 
 jobs:
