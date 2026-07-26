@@ -1,0 +1,12 @@
+:HL["/southernmost-bar-grille/_next/static/chunks/11luuqyg~dr.p.css","style"]
+:HL["/southernmost-bar-grille/_next/static/chunks/14zqgx500je06.css","style"]
+:HL["/southernmost-bar-grille/assets/interior.webp","image"]
+:HL["/southernmost-bar-grille/assets/lamb.webp","image"]
+:HL["/southernmost-bar-grille/assets/mahi.webp","image"]
+:HL["/southernmost-bar-grille/assets/wings.webp","image"]
+:HL["/southernmost-bar-grille/assets/burger.webp","image"]
+:HL["/southernmost-bar-grille/assets/seafood.webp","image"]
+:HL["/southernmost-bar-grille/assets/music.webp","image"]
+:HL["/southernmost-bar-grille/assets/hero.webp","image"]
+:HL["/southernmost-bar-grille/assets/cocktails.webp","image"]
+0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}},"staleTime":300,"buildId":"NHxPYzS0pqiviwMIhLIhu"}

@@ -1,0 +1,6 @@
+1:"$Sreact.fragment"
+2:I[22016,["/southernmost-bar-grille/_next/static/chunks/184q12yr.d71_.js","/southernmost-bar-grille/_next/static/chunks/0d3shmwh5_nmn.js"],""]
+3:I[97367,["/southernmost-bar-grille/_next/static/chunks/184q12yr.d71_.js","/southernmost-bar-grille/_next/static/chunks/0d3shmwh5_nmn.js"],"OutletBoundary"]
+4:"$Sreact.suspense"
+0:{"rsc":["$","$1","c",{"children":[["$","main",null,{"id":"main-content","className":"not-found","children":[["$","div",null,{"className":"not-found-sun","aria-hidden":"true"}],["$","div",null,{"className":"shell not-found-copy","children":[["$","p",null,{"className":"eyebrow light","children":"404 · Off the map"}],["$","h1",null,{"children":["This road doesn't lead",["$","br",null,{}],"to ",["$","em",null,{"children":"Southernmost."}]]}],["$","p",null,{"children":"The page may have moved, but the menu, live music and cold drinks are still right where you left them."}],["$","div",null,{"className":"button-row","children":[["$","$L2",null,{"className":"button sun","href":"/","children":"Return home"}],["$","$L2",null,{"className":"button glass","href":"/menu","children":"Browse the menu"}]]}]]}]]}],null,["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"NHxPYzS0pqiviwMIhLIhu"}
+5:null

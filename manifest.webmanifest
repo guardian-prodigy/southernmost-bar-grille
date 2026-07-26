@@ -1,13 +1,1 @@
-{
-  "name": "Southernmost Bar & Grille",
-  "short_name": "Southernmost",
-  "description": "Coastal kitchen, tropical cocktails, billiards, live music and table-side ordering in West Palm Beach.",
-  "start_url": "./",
-  "scope": "./",
-  "display": "standalone",
-  "background_color": "#041f1c",
-  "theme_color": "#041f1c",
-  "icons": [
-    {"src":"assets/favicon.svg","sizes":"any","type":"image/svg+xml"}
-  ]
-}
+{"name":"Southernmost Bar & Grille","short_name":"Southernmost","description":"Coastal food, cocktails, billiards and live music in West Palm Beach.","start_url":"/southernmost-bar-grille/","display":"standalone","background_color":"#031d1a","theme_color":"#031d1a","icons":[{"src":"/southernmost-bar-grille/southernmost-bar-grille/icon-192.png","sizes":"192x192","type":"image/png"},{"src":"/southernmost-bar-grille/southernmost-bar-grille/icon-512.png","sizes":"512x512","type":"image/png"}]}
