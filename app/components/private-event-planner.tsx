@@ -104,11 +104,11 @@ export function PrivateEventPlanner() {
 
         <div className="event-folio">
           <nav className="folio-steps" aria-label="Event-planning steps">
-            {[
+            {([
               [1, "Occasion"],
               [2, "Details"],
               [3, "Review"],
-            ].map(([number, label]) => (
+            ] satisfies [PlannerStep, string][]).map(([number, label]) => (
               <button
                 className={step === number ? "active" : step > number ? "complete" : ""}
                 type="button"
