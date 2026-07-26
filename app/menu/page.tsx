@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { MenuExplorer } from "../components/menu-explorer";
 import { menuCategories } from "../menu-data";
 
@@ -37,33 +36,23 @@ export default function MenuPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(menuSchema) }}
       />
-      <section className="page-hero menu-page-hero">
-        <div className="page-hero-image" aria-hidden="true" />
-        <div className="menu-hero-sun" aria-hidden="true" />
-        <div className="menu-hero-leaf menu-hero-leaf-one" aria-hidden="true" />
-        <div className="menu-hero-leaf menu-hero-leaf-two" aria-hidden="true" />
-        <div className="shell page-hero-grid">
-          <div>
-            <p className="eyebrow light">An interactive island menu</p>
-            <h1>
-              Open a taste of <em>South Florida.</em>
-            </h1>
-            <p>
-              Turn through coastal plates, Caribbean signatures, cold drinks
-              and the favorites that keep West Palm coming back.
-            </p>
+      <section className="menu-v2-hero" aria-labelledby="menu-v2-title">
+        <div className="menu-v2-hero-image" aria-hidden="true" />
+        <div className="menu-v2-hero-overlay" aria-hidden="true" />
+        <div className="shell menu-v2-hero-inner">
+          <p className="menu-v2-kicker">The Southernmost menu</p>
+          <h1 id="menu-v2-title">
+            A taste of <em>island time.</em>
+          </h1>
+          <p>
+            Coastal plates, Caribbean signatures and cold tropical drinks,
+            presented in our dining-room menu folio.
+          </p>
+          <div className="menu-v2-hero-meta" aria-label="Menu highlights">
+            <span>Lunch &amp; dinner</span>
+            <span>Served seven days</span>
+            <span>Pickup available</span>
           </div>
-          <aside>
-            <span>Not another menu grid</span>
-            <strong>Turn it. Taste it. Make it yours.</strong>
-            <p>
-              Explore the dimensional menu book, add favorites from each page,
-              or switch to the fast searchable list whenever you prefer.
-            </p>
-            <Link className="text-link light-link" href="/order">
-              Start an order <span aria-hidden="true">→</span>
-            </Link>
-          </aside>
         </div>
       </section>
       <MenuExplorer />
