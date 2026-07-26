@@ -1,0 +1,105 @@
+name: Materialize Southernmost platform v5
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/materialize-platform-v5.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: southernmost-platform-v5-materialize
+  cancel-in-progress: false
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout deployment branch
+        uses: actions/checkout@v4
+        with:
+          ref: deploy/platform-v5-20260727b
+          fetch-depth: 0
+
+      - name: Download and verify release package
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="1bab3471584af6c2f1b295347ddc60b713a98770de126be678c47e1361631979"
+          urls=(
+            "https://platform-cs-va6c2.adobe.io/content/storage/id/urn:aaid:sc:VA6C2:61561a28-81fc-4b07-a3d5-8e0c9bb0e62e"
+            "https://at.adobe.com/rsyCUdVvUaYPiLHW"
+          )
+          valid=""
+          for url in "${urls[@]}"; do
+            echo "Trying ${url}"
+            rm -f /tmp/southernmost-platform-v5.zip
+            if curl -A "Mozilla/5.0" -fL --retry 3 --connect-timeout 20 --max-time 240 "$url" -o /tmp/southernmost-platform-v5.zip; then
+              actual="$(sha256sum /tmp/southernmost-platform-v5.zip | awk '{print $1}')"
+              echo "Downloaded SHA-256: ${actual}"
+              if [ "$actual" = "$expected" ] && unzip -tq /tmp/southernmost-platform-v5.zip >/dev/null; then
+                valid=yes
+                break
+              fi
+            fi
+          done
+          test -n "$valid"
+          unzip -t /tmp/southernmost-platform-v5.zip
+
+      - name: Replace branch with platform source
+        shell: bash
+        run: |
+          set -euo pipefail
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          unzip -q /tmp/southernmost-platform-v5.zip -d .
+          touch .nojekyll
+          test -s index.html
+          test -s platform.css
+          test -s platform-store.js
+          test -s platform.js
+          test -s three-scenes-pro.js
+          test -s order/index.html
+          test -s staff/index.html
+          test -s admin/index.html
+
+      - name: Validate complete platform
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Run production validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run check
+          node --check platform-store.js
+          node --check platform.js
+          node --check three-scenes-pro.js
+          node --check data.js
+          node --check sw.js
+          grep -q 'data-release="20260727b"' index.html
+          grep -q 'southernmost-v18-20260727b' sw.js
+          grep -q 'setupOrderPage' platform.js
+          grep -q 'setupStaffPage' platform.js
+          grep -q 'setupAdminPage' platform.js
+          test -s assets/southernmost-wordmark.webp
+          test -s assets/og-southernmost.jpg
+          test -s assets/qr-table-12.png
+          ! grep -Rqi 'atob(' index.html platform-store.js platform.js three-scenes-pro.js
+          ! grep -RqiE '>[^<]*(demo|demonstration)[^<]*<' index.html menu/index.html order/index.html events/index.html private-events/index.html visit/index.html loyalty/index.html staff/index.html admin/index.html
+
+      - name: Commit platform source to deployment branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git status --short
+          git diff --cached --quiet && { echo "No platform changes were generated."; exit 1; }
+          git commit -m "Deploy Southernmost platform v5 20260727b"
+          git push origin HEAD:deploy/platform-v5-20260727b
