@@ -1452,9 +1452,11 @@
 
 .menu-pro-stage {
   position: relative;
+  overflow: hidden;
   border: 1px solid rgba(215, 170, 82, 0.35);
   background:
-    radial-gradient(circle at 32% 45%, rgba(255, 200, 87, 0.12), transparent 25%),
+    radial-gradient(circle at 50% 32%, rgba(255, 200, 87, 0.13), transparent 27%),
+    linear-gradient(115deg, transparent 48%, rgba(255, 255, 255, 0.025) 49%, transparent 51%),
     linear-gradient(130deg, #052f2a, #021d1a 68%);
   box-shadow: 0 34px 90px rgba(2, 29, 26, 0.22);
   color: var(--premier-ivory);
@@ -1465,28 +1467,28 @@
 }
 
 .menu-pro-chapters {
-  display: flex;
-  overflow-x: auto;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   border-bottom: 1px solid rgba(255, 255, 255, 0.13);
-  scrollbar-width: thin;
 }
 
 .menu-pro-chapters button {
   min-height: 72px;
-  flex: 0 0 auto;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
-  padding: 0 19px;
+  padding: 0 12px;
   border: 0;
   border-right: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   background: transparent;
   color: rgba(255, 250, 240, 0.52);
   cursor: pointer;
   font: inherit;
-  font-size: 0.65rem;
+  font-size: 0.59rem;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.065em;
   text-transform: uppercase;
   transition:
     color 160ms ease,
@@ -1510,22 +1512,20 @@
 }
 
 .menu-pro-book-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1.12fr) minmax(390px, 0.78fr);
-  min-height: 720px;
+  display: block;
 }
 
 .menu-pro-canvas-column {
   position: relative;
+  min-height: 560px;
   min-width: 0;
   overflow: hidden;
-  border-right: 1px solid rgba(255, 255, 255, 0.12);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .three-menu-book {
   position: absolute;
   inset: 0;
-  min-height: 560px;
   cursor: grab;
 }
 
@@ -1537,6 +1537,12 @@
   width: 100%;
   height: 100%;
   display: block;
+  opacity: 0;
+  transition: opacity 280ms ease;
+}
+
+.three-menu-book.is-ready canvas {
+  opacity: 1;
 }
 
 .three-menu-book-fallback {
@@ -1545,7 +1551,7 @@
   left: 50%;
   width: min(70%, 470px);
   aspect-ratio: 1.48;
-  display: none;
+  display: grid;
   align-content: center;
   gap: 9px;
   padding: 45px;
@@ -1559,8 +1565,8 @@
   transform: translate(-50%, -50%) rotate(-3deg);
 }
 
-.three-menu-book.is-fallback .three-menu-book-fallback {
-  display: grid;
+.three-menu-book.is-ready:not(.is-fallback) .three-menu-book-fallback {
+  display: none;
 }
 
 .three-menu-book-fallback span {
@@ -1596,17 +1602,21 @@
 
 .menu-pro-readable {
   min-width: 0;
-  padding: 43px 38px 30px;
+  display: grid;
+  grid-template-columns: minmax(240px, 0.42fr) minmax(0, 1fr);
+  gap: 52px;
+  padding: 52px 56px 42px;
   background: rgba(255, 250, 240, 0.965);
   color: var(--premier-ink);
 }
 
 .menu-pro-readable > header {
+  align-content: start;
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 20px;
-  padding-bottom: 25px;
-  border-bottom: 1px solid rgba(5, 47, 42, 0.2);
+  padding: 0 42px 0 0;
+  border-right: 1px solid rgba(5, 47, 42, 0.2);
 }
 
 .menu-pro-readable > header span {
@@ -1637,19 +1647,19 @@
 }
 
 .menu-pro-items {
-  border-bottom: 1px solid rgba(5, 47, 42, 0.2);
+  align-content: start;
 }
 
 .menu-pro-item {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 12px 18px;
-  padding: 15px 0;
+  padding: 18px 0;
   border-bottom: 1px solid rgba(5, 47, 42, 0.13);
 }
 
-.menu-pro-item:last-child {
-  border-bottom: 0;
+.menu-pro-item:first-child {
+  padding-top: 0;
 }
 
 .menu-pro-item-copy {
@@ -1745,6 +1755,7 @@
 }
 
 .menu-pro-allergy {
+  grid-column: 2;
   margin: 18px 0 0;
   color: #7c817c;
   font-size: 0.57rem;
@@ -1888,13 +1899,9 @@
   }
 
   .menu-pro-canvas-column {
-    min-height: 640px;
+    min-height: 520px;
     border-right: 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.13);
-  }
-
-  .three-menu-book {
-    min-height: 640px;
   }
 
   .menu-pro-readable {
@@ -2045,6 +2052,23 @@
 
   .menu-view-toggle {
     justify-self: start;
+  }
+
+  .menu-pro-chapters {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  .menu-pro-chapters::-webkit-scrollbar {
+    display: none;
+  }
+
+  .menu-pro-chapters button {
+    min-width: 155px;
+    flex: 0 0 auto;
+    scroll-snap-align: start;
   }
 
   .menu-pro-readable {
@@ -2339,8 +2363,7 @@
     min-height: 62px;
   }
 
-  .menu-pro-canvas-column,
-  .three-menu-book {
+  .menu-pro-canvas-column {
     min-height: 405px;
   }
 

@@ -310,10 +310,11 @@ export function ThreeMenuBook({
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.domElement.setAttribute("aria-hidden", "true");
+    renderer.domElement.className = "three-menu-book-canvas";
     container.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x031c19, 0.018);
+    scene.fog = new THREE.FogExp2(0x031c19, 0.005);
 
     const camera = new THREE.PerspectiveCamera(
       33,
@@ -321,11 +322,9 @@ export function ThreeMenuBook({
       0.1,
       100,
     );
-    camera.position.set(0, 8.7, 12.8);
-    camera.lookAt(0, 0.2, -0.25);
 
     const root = new THREE.Group();
-    root.position.y = -0.35;
+    root.position.y = -0.2;
     root.rotation.z = -0.018;
     scene.add(root);
 
@@ -376,10 +375,10 @@ export function ThreeMenuBook({
     root.add(cover);
 
     const leftStack = new THREE.Mesh(
-      new THREE.BoxGeometry(5.86, 0.3, 7.76),
+      new THREE.BoxGeometry(5.86, 0.32, 7.76),
       paperEdgeMaterial,
     );
-    leftStack.position.set(-3.02, 0.42, 0);
+    leftStack.position.set(-3.02, 0.38, 0);
     leftStack.castShadow = true;
     leftStack.receiveShadow = true;
     root.add(leftStack);
@@ -389,17 +388,28 @@ export function ThreeMenuBook({
     root.add(rightStack);
 
     for (let lineIndex = 0; lineIndex < 7; lineIndex += 1) {
-      const y = 0.34 + lineIndex * 0.045;
+      const y = 0.25 + lineIndex * 0.037;
       const lineMaterial = new THREE.MeshBasicMaterial({
         color: lineIndex % 2 === 0 ? 0xd4bd95 : 0xf5ead7,
       });
       for (const x of [-3.02, 3.02]) {
-        const edge = new THREE.Mesh(
-          new THREE.BoxGeometry(5.76, 0.012, 7.78),
+        const foreEdge = new THREE.Mesh(
+          new THREE.BoxGeometry(5.74, 0.012, 0.035),
           lineMaterial,
         );
-        edge.position.set(x, y, 0);
-        root.add(edge);
+        foreEdge.position.set(x, y, 3.895);
+        root.add(foreEdge);
+
+        const backEdge = foreEdge.clone();
+        backEdge.position.z = -3.895;
+        root.add(backEdge);
+
+        const outerEdge = new THREE.Mesh(
+          new THREE.BoxGeometry(0.035, 0.012, 7.74),
+          lineMaterial,
+        );
+        outerEdge.position.set(x < 0 ? -5.92 : 5.92, y, 0);
+        root.add(outerEdge);
       }
     }
 
@@ -409,10 +419,11 @@ export function ThreeMenuBook({
         map: leftTexture,
         roughness: 0.84,
         metalness: 0,
+        side: THREE.DoubleSide,
       }),
     );
     leftPage.rotation.x = -Math.PI / 2;
-    leftPage.position.set(-3, 0.6, 0);
+    leftPage.position.set(-3, 0.57, 0);
     leftPage.receiveShadow = true;
     root.add(leftPage);
 
@@ -422,10 +433,11 @@ export function ThreeMenuBook({
         map: rightTexture,
         roughness: 0.84,
         metalness: 0,
+        side: THREE.DoubleSide,
       }),
     );
     rightPage.rotation.x = -Math.PI / 2;
-    rightPage.position.set(3, 0.605, 0);
+    rightPage.position.set(3, 0.575, 0);
     rightPage.receiveShadow = true;
     root.add(rightPage);
 
@@ -434,7 +446,7 @@ export function ThreeMenuBook({
       leatherMaterial,
     );
     spine.rotation.x = Math.PI / 2;
-    spine.position.y = 0.58;
+    spine.position.y = 0.565;
     spine.castShadow = true;
     root.add(spine);
 
@@ -443,7 +455,7 @@ export function ThreeMenuBook({
       goldMaterial,
     );
     upperGoldBand.rotation.x = Math.PI / 2;
-    upperGoldBand.position.set(0, 0.58, -3.39);
+    upperGoldBand.position.set(0, 0.565, -3.39);
     root.add(upperGoldBand);
 
     const lowerGoldBand = upperGoldBand.clone();
@@ -458,7 +470,7 @@ export function ThreeMenuBook({
       side: THREE.DoubleSide,
     });
     const turningPage = new THREE.Mesh(turningGeometry, turningMaterial);
-    turningPage.position.y = 0.64;
+    turningPage.position.y = 0.605;
     turningPage.castShadow = true;
     turningPage.receiveShadow = true;
     root.add(turningPage);
@@ -503,6 +515,24 @@ export function ThreeMenuBook({
     ).matches;
     const pointer = { x: 0, y: 0 };
     const target = { x: 0, y: 0 };
+    let cameraDistance = 20;
+
+    const fitCamera = () => {
+      const width = Math.max(container.clientWidth, 1);
+      const height = Math.max(container.clientHeight, 1);
+      const aspect = width / height;
+      const verticalFov = THREE.MathUtils.degToRad(camera.fov);
+      const horizontalFov = 2 * Math.atan(Math.tan(verticalFov / 2) * aspect);
+      const distanceForWidth = 14.35 / (2 * Math.tan(horizontalFov / 2));
+      const distanceForHeight = 10.4 / (2 * Math.tan(verticalFov / 2));
+      cameraDistance = Math.max(distanceForWidth, distanceForHeight) * 1.08;
+      camera.position.set(
+        pointer.x * cameraDistance * 0.018,
+        cameraDistance * 0.56,
+        cameraDistance * 0.83,
+      );
+      camera.lookAt(0, 0.12, 0);
+    };
 
     const handlePointerMove = (event: PointerEvent) => {
       const bounds = container.getBoundingClientRect();
@@ -559,11 +589,16 @@ export function ThreeMenuBook({
       pointer.y += (target.y - pointer.y) * 0.035;
       root.rotation.z = -0.018 + pointer.x * 0.028;
       root.rotation.x = pointer.y * -0.025;
-      root.position.y = -0.35 + (prefersReducedMotion ? 0 : Math.sin(time * 0.0006) * 0.025);
-      camera.position.x = pointer.x * 0.34;
-      camera.lookAt(0, 0.2, -0.25);
+      root.position.y =
+        -0.2 +
+        (prefersReducedMotion ? 0 : Math.sin(time * 0.0006) * 0.025);
+      camera.position.x = pointer.x * cameraDistance * 0.018;
+      camera.lookAt(0, 0.12, 0);
 
       renderer.render(scene, camera);
+      if (!container.classList.contains("is-ready")) {
+        container.classList.add("is-ready");
+      }
       frame += 1;
       animationFrame = window.requestAnimationFrame(render);
     };
@@ -575,8 +610,10 @@ export function ThreeMenuBook({
       renderer.setSize(width, height);
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
+      fitCamera();
     });
     resizeObserver.observe(container);
+    fitCamera();
     animationFrame = window.requestAnimationFrame(render);
 
     return () => {
@@ -606,6 +643,7 @@ export function ThreeMenuBook({
       renderer.dispose();
       renderer.forceContextLoss();
       renderer.domElement.remove();
+      container.classList.remove("is-ready");
       void frame;
     };
   }, [
