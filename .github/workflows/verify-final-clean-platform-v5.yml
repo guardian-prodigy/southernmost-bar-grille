@@ -1,0 +1,62 @@
+name: Verify final cleaned Southernmost platform v5
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/verify-final-clean-platform-v5.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-public:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Confirm the cleaned repository is still serving platform v5
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://guardian-prodigy.github.io/southernmost-bar-grille"
+          ready=""
+
+          for attempt in $(seq 1 60); do
+            echo "Final public check ${attempt}/60"
+            rm -f /tmp/index.html /tmp/menu.html /tmp/order.html /tmp/staff.html /tmp/admin.html /tmp/platform.js /tmp/sw.js
+
+            if curl -fsSL --connect-timeout 15 --max-time 60 "$base/?v=20260727b&fresh=1" -o /tmp/index.html \
+              && grep -q 'data-release="20260727b"' /tmp/index.html \
+              && grep -q 'platform.css?v=20260727b' /tmp/index.html \
+              && grep -q 'platform.js?v=20260727b' /tmp/index.html \
+              && grep -q 'three-scenes-pro.js?v=20260727b' /tmp/index.html \
+              && ! grep -qi 'hotfix\.css\|hotfix\.js\|atob(' /tmp/index.html \
+              && curl -fsSL "$base/menu/?v=20260727b" -o /tmp/menu.html \
+              && grep -q 'data-page="menu"' /tmp/menu.html \
+              && curl -fsSL "$base/order/?table=12&zone=dining&token=SM-DINING-12&v=20260727b" -o /tmp/order.html \
+              && grep -q 'order-interaction.css?v=20260727b' /tmp/order.html \
+              && grep -q 'order-controller.js?v=20260727b' /tmp/order.html \
+              && curl -fsSL "$base/staff/?v=20260727b" -o /tmp/staff.html \
+              && grep -q 'staff-enhancement.js?v=20260727b' /tmp/staff.html \
+              && curl -fsSL "$base/admin/?v=20260727b" -o /tmp/admin.html \
+              && grep -q 'data-page="admin"' /tmp/admin.html \
+              && curl -fsSL "$base/platform.js?v=20260727b" -o /tmp/platform.js \
+              && grep -q 'renderOrder' /tmp/platform.js \
+              && grep -q 'renderStaffView' /tmp/platform.js \
+              && grep -q 'renderAdminView' /tmp/platform.js \
+              && grep -q 'Island Guide' /tmp/platform.js \
+              && curl -fsSL "$base/sw.js?v=20260727b" -o /tmp/sw.js \
+              && grep -q 'southernmost-v18-20260727b' /tmp/sw.js \
+              && grep -q './order/order-interaction.css' /tmp/sw.js \
+              && grep -q './staff/staff-enhancement.js' /tmp/sw.js; then
+              ready="yes"
+              break
+            fi
+
+            sleep 10
+          done
+
+          test -n "$ready"
+          echo "Final cleaned Southernmost platform v5 publication verified."
+          wc -c /tmp/index.html /tmp/menu.html /tmp/order.html /tmp/staff.html /tmp/admin.html /tmp/platform.js /tmp/sw.js
