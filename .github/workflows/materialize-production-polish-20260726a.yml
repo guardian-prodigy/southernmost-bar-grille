@@ -5,13 +5,17 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/materialize-production-polish-20260726a.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/MATERIALIZE_PRODUCTION_POLISH"
   workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: southernmost-production-polish-20260726a
+  group: southernmost-production-polish-20260726a-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: false
 
 jobs:
