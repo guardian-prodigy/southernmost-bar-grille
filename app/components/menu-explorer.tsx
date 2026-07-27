@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { menuCategories } from "../menu-data";
 import type { MenuItem } from "../menu-data";
+import { InteractiveMenuBook } from "./interactive-menu-book";
 import { useOrder } from "./order-provider";
-import { ThreeMenuBook } from "./three-menu-book";
 
 const FAVORITES_KEY = "southernmost-favorites-v1";
 
@@ -12,30 +12,11 @@ export function MenuExplorer() {
   const [category, setCategory] = useState("all");
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"book" | "list">("book");
-  const [pageIndex, setPageIndex] = useState(0);
-  const [turn, setTurn] = useState<{
-    direction: "next" | "previous";
-    key: number;
-  }>({ direction: "next", key: 0 });
   const [favorites, setFavorites] = useState<string[]>([]);
   const [favoritesReady, setFavoritesReady] = useState(false);
   const [detailItem, setDetailItem] = useState<MenuItem | null>(null);
   const [toast, setToast] = useState("");
-  const touchStart = useRef<number | null>(null);
   const { addItem, openCart } = useOrder();
-
-  const currentPage = menuCategories[pageIndex];
-
-  const goToPage = (nextIndex: number) => {
-    const bounded = Math.max(0, Math.min(menuCategories.length - 1, nextIndex));
-    if (bounded === pageIndex) return;
-    setTurn({
-      direction: bounded > pageIndex ? "next" : "previous",
-      key: turn.key + 1,
-    });
-    setPageIndex(bounded);
-    setCategory(menuCategories[bounded].id);
-  };
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -67,25 +48,6 @@ export function MenuExplorer() {
   }, [toast]);
 
   useEffect(() => {
-    if (view !== "book" || detailItem) return;
-    const handleKey = (event: KeyboardEvent) => {
-      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
-        return;
-      }
-      if (event.key === "ArrowLeft") {
-        event.preventDefault();
-        goToPage(pageIndex - 1);
-      }
-      if (event.key === "ArrowRight") {
-        event.preventDefault();
-        goToPage(pageIndex + 1);
-      }
-    };
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  });
-
-  useEffect(() => {
     if (!detailItem) return;
     const handleKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") setDetailItem(null);
@@ -98,7 +60,7 @@ export function MenuExplorer() {
     };
   }, [detailItem]);
 
-  function toggleFavorite(item: MenuItem) {
+  const toggleFavorite = useCallback((item: MenuItem) => {
     setFavorites((current) =>
       current.includes(item.id)
         ? current.filter((id) => id !== item.id)
@@ -109,16 +71,16 @@ export function MenuExplorer() {
         ? `${item.name} removed from saved dishes.`
         : `${item.name} saved for later.`,
     );
-  }
+  }, [favorites]);
 
-  function addFromMenu(item: MenuItem) {
+  const addFromMenu = useCallback((item: MenuItem) => {
     if (item.alcoholic) {
       setToast(`${item.name} is available for guests dining in.`);
       return;
     }
     addItem(item);
     setToast(`${item.name} added to your order.`);
-  }
+  }, [addItem]);
 
   const filteredCategories = useMemo(() => {
     const needle = search.trim().toLowerCase();
@@ -194,144 +156,12 @@ export function MenuExplorer() {
         </div>
 
         {view === "book" && (
-          <div
-            className="menu-pro-stage"
-            tabIndex={0}
-            aria-label={`${currentPage.name} menu chapter. Use left and right arrow keys to change chapters.`}
-            onTouchStart={(event) => {
-              touchStart.current = event.touches[0]?.clientX ?? null;
-            }}
-            onTouchEnd={(event) => {
-              const start = touchStart.current;
-              const end = event.changedTouches[0]?.clientX;
-              touchStart.current = null;
-              if (start === null || end === undefined || Math.abs(start - end) < 45) return;
-              goToPage(start > end ? pageIndex + 1 : pageIndex - 1);
-            }}
-          >
-            <nav className="menu-pro-chapters" aria-label="Menu chapters">
-              {menuCategories.map((group, index) => (
-                <button
-                  className={index === pageIndex ? "active" : ""}
-                  type="button"
-                  key={group.id}
-                  onClick={() => goToPage(index)}
-                  aria-current={index === pageIndex ? "page" : undefined}
-                >
-                  <span>{String(index + 1).padStart(2, "0")}</span>
-                  {group.name}
-                </button>
-              ))}
-            </nav>
-
-            <div className="menu-pro-book-layout">
-              <div className="menu-pro-canvas-column">
-                <ThreeMenuBook
-                  categoryName={currentPage.name}
-                  subtitle={currentPage.subtitle}
-                  pageNumber={pageIndex + 1}
-                  pageCount={menuCategories.length}
-                  items={currentPage.items}
-                  direction={turn.direction}
-                  animationKey={turn.key}
-                />
-                <p className="menu-pro-canvas-note">
-                  Drag your pointer to inspect · Change chapters to turn the page
-                </p>
-              </div>
-
-              <section
-                className="menu-pro-readable"
-                aria-labelledby={`menu-pro-title-${currentPage.id}`}
-              >
-                <header>
-                  <div>
-                    <span>Chapter {String(pageIndex + 1).padStart(2, "0")}</span>
-                    <h3 id={`menu-pro-title-${currentPage.id}`}>
-                      {currentPage.name}
-                    </h3>
-                    <p>{currentPage.subtitle}</p>
-                  </div>
-                  <b>
-                    {String(pageIndex + 1).padStart(2, "0")} /{" "}
-                    {String(menuCategories.length).padStart(2, "0")}
-                  </b>
-                </header>
-                <div className="menu-pro-items">
-                  {currentPage.items.map((item) => (
-                    <article className="menu-pro-item" key={item.id}>
-                      <button
-                        className="menu-pro-item-copy"
-                        type="button"
-                        onClick={() => setDetailItem(item)}
-                        aria-label={`View details for ${item.name}`}
-                      >
-                        <span>
-                          <strong>{item.name}</strong>
-                          {item.badge && <small>{item.badge}</small>}
-                        </span>
-                        <p>{item.description}</p>
-                      </button>
-                      <div className="menu-pro-item-actions">
-                        <strong>${item.price.toFixed(2)}</strong>
-                        <button
-                          className={`menu-pro-save ${
-                            favorites.includes(item.id) ? "is-saved" : ""
-                          }`}
-                          type="button"
-                          aria-label={
-                            favorites.includes(item.id)
-                              ? `Remove ${item.name} from saved dishes`
-                              : `Save ${item.name}`
-                          }
-                          onClick={() => toggleFavorite(item)}
-                        >
-                          <span aria-hidden="true">
-                            {favorites.includes(item.id) ? "♥" : "♡"}
-                          </span>
-                        </button>
-                        <button
-                          className="menu-pro-add"
-                          type="button"
-                          onClick={() => addFromMenu(item)}
-                        >
-                          {item.alcoholic ? "Dine-in · 21+" : "Add"}
-                        </button>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-                <p className="menu-pro-allergy">
-                  Select a dish for details · Please tell us about allergies
-                </p>
-              </section>
-            </div>
-
-            <div className="menu-pro-controls">
-              <button
-                type="button"
-                disabled={pageIndex === 0}
-                onClick={() => goToPage(pageIndex - 1)}
-              >
-                <span aria-hidden="true">←</span>
-                Previous
-              </button>
-              <p aria-live="polite">
-                <strong>{currentPage.name}</strong>
-                <span>
-                  Chapter {pageIndex + 1} of {menuCategories.length}
-                </span>
-              </p>
-              <button
-                type="button"
-                disabled={pageIndex === menuCategories.length - 1}
-                onClick={() => goToPage(pageIndex + 1)}
-              >
-                Next
-                <span aria-hidden="true">→</span>
-              </button>
-            </div>
-          </div>
+          <InteractiveMenuBook
+            favorites={favorites}
+            onAddItem={addFromMenu}
+            onSelectItem={setDetailItem}
+            onToggleFavorite={toggleFavorite}
+          />
         )}
 
         {view === "list" && (
@@ -373,7 +203,6 @@ export function MenuExplorer() {
               key={group.id}
               onClick={() => {
                 setCategory(group.id);
-                setPageIndex(menuCategories.findIndex((item) => item.id === group.id));
               }}
             >
               {group.name}
